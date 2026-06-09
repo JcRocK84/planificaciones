@@ -1,0 +1,1234 @@
+<html lang="es"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planificación Álvaro Ortega — Policía Nacional</title>
+
+    <!-- PWA / Pantalla de inicio móvil -->
+    <meta name="application-name" content="Planificación Álvaro Ortega">
+    <meta name="apple-mobile-web-app-title" content="Planificación Álvaro Ortega">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0c4a6e">
+
+    <!-- Open Graph (preview en WhatsApp / Telegram) -->
+    <meta property="og:title" content="Planificación Álvaro Ortega — Policía Nacional Promo 43">
+    <meta property="og:description" content="Tu planificación personalizada de junio 2026. Academia Ángeles Custodios.">
+    <meta property="og:type" content="website">
+
+    <!-- Tailwind (CDN play — sin aviso de producción) -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        // Suprimir aviso CDN en consola
+        if (typeof console !== 'undefined') {
+            const _warn = console.warn.bind(console);
+            console.warn = (...args) => {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+                _warn(...args);
+            };
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    
+    <style>
+        body { background-color: #fafaf9; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 220px;
+            max-height: 220px;
+            min-height: 160px;
+        }
+
+        .week-btn.active {
+            background-color: #0369a1; 
+            color: white;
+            border-color: #0369a1;
+        }
+
+        .day-card {
+            border-left: 4px solid #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .day-card:hover {
+            border-left-color: #0ea5e9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .editable-active {
+            outline: 2px dashed #0ea5e9 !important;
+            outline-offset: 4px;
+            background-color: #f0f9ff !important;
+            border-radius: 4px;
+            cursor: text;
+            min-height: 1.5em;
+            display: inline-block;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .editable-active:hover {
+            background-color: #e0f2fe !important;
+        }
+        .editable-active-block {
+            display: block;
+            width: 100%;
+        }
+
+        #format-toolbar {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            padding: 6px 10px;
+            gap: 4px;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 95vw;
+        }
+        #format-toolbar.visible { display: flex; }
+        .fmt-btn {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #334155;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            white-space: nowrap;
+        }
+        .fmt-btn:hover { background: #0ea5e9; color: white; border-color: #0ea5e9; }
+        .fmt-btn.active-fmt { background: #0369a1; color: white; border-color: #0369a1; }
+        .fmt-sep { width: 1px; background: #e2e8f0; height: 22px; margin: 0 2px; }
+        .fmt-select {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 3px 6px;
+            font-size: 12px;
+            background: #f8fafc;
+            color: #334155;
+            cursor: pointer;
+        }
+        .fmt-color {
+            width: 26px; height: 26px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            padding: 1px;
+        }
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #059669;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 50;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-weight: bold;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        @media print {
+            body { background-color: white; color: black; }
+            #main-header { box-shadow: none !important; border-bottom: 2px solid #e5e7eb; color: black !important; background-color: white !important; padding: 10px 0 !important; }
+            #main-header h1 { color: black !important; }
+            #main-header p { color: #4b5563 !important; }
+            #main-header .text-sky-400, #main-header .text-emerald-400, #main-header .text-stone-200 { color: black !important; font-weight: bold; }
+            #main-header .bg-stone-800 { background-color: transparent !important; border-color: #e5e7eb !important; }
+            
+            nav, #btn-edit-mode, #btn-save-link, #header-color-picker, #btn-print, #week-selectors, #btn-simulate-none, #btn-simulate-all, #toast { display: none !important; }
+            
+            .tab-content { display: none !important; }
+            .tab-content.active { display: block !important; page-break-inside: auto; }
+            
+            .day-card { page-break-inside: avoid; border-left-color: #94a3b8; margin-bottom: 10px; }
+            .chart-container { page-break-inside: avoid; }
+            
+            .shadow-sm, .shadow-md { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+            main { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}[type='text'],input:where(:not([type])),[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week'],[multiple],textarea,select{-webkit-appearance:none;appearance:none;background-color:#fff;border-color:#6b7280;border-width:1px;border-radius:0px;padding-top:0.5rem;padding-right:0.75rem;padding-bottom:0.5rem;padding-left:0.75rem;font-size:1rem;line-height:1.5rem;--tw-shadow:0 0 #0000;}[type='text']:focus, input:where(:not([type])):focus, [type='email']:focus, [type='url']:focus, [type='password']:focus, [type='number']:focus, [type='date']:focus, [type='datetime-local']:focus, [type='month']:focus, [type='search']:focus, [type='tel']:focus, [type='time']:focus, [type='week']:focus, [multiple]:focus, textarea:focus, select:focus{outline:2px solid transparent;outline-offset:2px;--tw-ring-inset:var(--tw-empty,/*!*/ /*!*/);--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:#2563eb;--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);border-color:#2563eb}input::placeholder,textarea::placeholder{color:#6b7280;opacity:1}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-date-and-time-value{min-height:1.5em;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit,::-webkit-datetime-edit-year-field,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute-field,::-webkit-datetime-edit-second-field,::-webkit-datetime-edit-millisecond-field,::-webkit-datetime-edit-meridiem-field{padding-top:0;padding-bottom:0}select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.5rem center;background-repeat:no-repeat;background-size:1.5em 1.5em;padding-right:2.5rem;print-color-adjust:exact}[multiple],[size]:where(select:not([size="1"])){background-image:initial;background-position:initial;background-repeat:unset;background-size:initial;padding-right:0.75rem;print-color-adjust:unset}[type='checkbox'],[type='radio']{-webkit-appearance:none;appearance:none;padding:0;print-color-adjust:exact;display:inline-block;vertical-align:middle;background-origin:border-box;-webkit-user-select:none;user-select:none;flex-shrink:0;height:1rem;width:1rem;color:#2563eb;background-color:#fff;border-color:#6b7280;border-width:1px;--tw-shadow:0 0 #0000}[type='checkbox']{border-radius:0px}[type='radio']{border-radius:100%}[type='checkbox']:focus,[type='radio']:focus{outline:2px solid transparent;outline-offset:2px;--tw-ring-inset:var(--tw-empty,/*!*/ /*!*/);--tw-ring-offset-width:2px;--tw-ring-offset-color:#fff;--tw-ring-color:#2563eb;--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}[type='checkbox']:checked,[type='radio']:checked{border-color:transparent;background-color:currentColor;background-size:100% 100%;background-position:center;background-repeat:no-repeat}[type='checkbox']:checked{background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");}@media (forced-colors: active) {[type='checkbox']:checked{-webkit-appearance:auto;appearance:auto}}[type='radio']:checked{background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");}@media (forced-colors: active) {[type='radio']:checked{-webkit-appearance:auto;appearance:auto}}[type='checkbox']:checked:hover,[type='checkbox']:checked:focus,[type='radio']:checked:hover,[type='radio']:checked:focus{border-color:transparent;background-color:currentColor}[type='checkbox']:indeterminate{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");border-color:transparent;background-color:currentColor;background-size:100% 100%;background-position:center;background-repeat:no-repeat;}@media (forced-colors: active) {[type='checkbox']:indeterminate{-webkit-appearance:auto;appearance:auto}}[type='checkbox']:indeterminate:hover,[type='checkbox']:indeterminate:focus{border-color:transparent;background-color:currentColor}[type='file']{background:unset;border-color:inherit;border-width:0;border-radius:0;padding:0;font-size:unset;line-height:inherit}[type='file']:focus{outline:1px solid ButtonText;outline:1px auto -webkit-focus-ring-color}.visible{visibility:visible}.absolute{position:absolute}.relative{position:relative}.top-0{top:0px}.mx-auto{margin-left:auto;margin-right:auto}.mb-0\.5{margin-bottom:0.125rem}.mb-1{margin-bottom:0.25rem}.mb-10{margin-bottom:2.5rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.ml-auto{margin-left:auto}.mr-1{margin-right:0.25rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-3{height:0.75rem}.h-7{height:1.75rem}.h-full{height:100%}.w-10{width:2.5rem}.w-7{width:1.75rem}.w-\[14\%\]{width:14%}.w-\[8\%\]{width:8%}.w-full{width:100%}.min-w-\[640px\]{min-width:640px}.max-w-6xl{max-width:72rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.flex-grow{flex-grow:1}.border-collapse{border-collapse:collapse}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.flex-nowrap{flex-wrap:nowrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-x-hidden{overflow-x:hidden}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-r-lg{border-top-right-radius:0.5rem;border-bottom-right-radius:0.5rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-r-2{border-right-width:2px}.border-t{border-top-width:1px}.border-\[\#2d6a9f\]{--tw-border-opacity:1;border-color:rgb(45 106 159 / var(--tw-border-opacity, 1))}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138 / var(--tw-border-opacity, 1))}.border-amber-400\/40{border-color:rgb(251 191 36 / 0.4)}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208 / var(--tw-border-opacity, 1))}.border-emerald-300{--tw-border-opacity:1;border-color:rgb(110 231 183 / var(--tw-border-opacity, 1))}.border-emerald-400\/40{border-color:rgb(52 211 153 / 0.4)}.border-indigo-200{--tw-border-opacity:1;border-color:rgb(199 210 254 / var(--tw-border-opacity, 1))}.border-purple-200{--tw-border-opacity:1;border-color:rgb(233 213 255 / var(--tw-border-opacity, 1))}.border-purple-300{--tw-border-opacity:1;border-color:rgb(216 180 254 / var(--tw-border-opacity, 1))}.border-rose-200{--tw-border-opacity:1;border-color:rgb(254 205 211 / var(--tw-border-opacity, 1))}.border-sky-200{--tw-border-opacity:1;border-color:rgb(186 230 253 / var(--tw-border-opacity, 1))}.border-sky-300{--tw-border-opacity:1;border-color:rgb(125 211 252 / var(--tw-border-opacity, 1))}.border-sky-400{--tw-border-opacity:1;border-color:rgb(56 189 248 / var(--tw-border-opacity, 1))}.border-sky-700{--tw-border-opacity:1;border-color:rgb(3 105 161 / var(--tw-border-opacity, 1))}.border-sky-800{--tw-border-opacity:1;border-color:rgb(7 89 133 / var(--tw-border-opacity, 1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240 / var(--tw-border-opacity, 1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225 / var(--tw-border-opacity, 1))}.border-stone-200{--tw-border-opacity:1;border-color:rgb(231 229 228 / var(--tw-border-opacity, 1))}.border-stone-300{--tw-border-opacity:1;border-color:rgb(214 211 209 / var(--tw-border-opacity, 1))}.border-transparent{border-color:transparent}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-white\/50{border-color:rgb(255 255 255 / 0.5)}.border-white\/80{border-color:rgb(255 255 255 / 0.8)}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-violet-200{--tw-border-opacity:1;border-color:rgb(221 214 254 / var(--tw-border-opacity, 1))}.bg-\[\#1a3a5c\]{--tw-bg-opacity:1;background-color:rgb(26 58 92 / var(--tw-bg-opacity, 1))}.bg-\[\#2d6a9f\]{--tw-bg-opacity:1;background-color:rgb(45 106 159 / var(--tw-bg-opacity, 1))}.bg-\[\#4a7fa5\]{--tw-bg-opacity:1;background-color:rgb(74 127 165 / var(--tw-bg-opacity, 1))}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199 / var(--tw-bg-opacity, 1))}.bg-amber-400\/30{background-color:rgb(251 191 36 / 0.3)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235 / var(--tw-bg-opacity, 1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229 / var(--tw-bg-opacity, 1))}.bg-emerald-400\/30{background-color:rgb(52 211 153 / 0.3)}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245 / var(--tw-bg-opacity, 1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255 / var(--tw-bg-opacity, 1))}.bg-orange-100{--tw-bg-opacity:1;background-color:rgb(255 237 213 / var(--tw-bg-opacity, 1))}.bg-pink-50{--tw-bg-opacity:1;background-color:rgb(253 242 248 / var(--tw-bg-opacity, 1))}.bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255 / var(--tw-bg-opacity, 1))}.bg-purple-50{--tw-bg-opacity:1;background-color:rgb(250 245 255 / var(--tw-bg-opacity, 1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242 / var(--tw-bg-opacity, 1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254 / var(--tw-bg-opacity, 1))}.bg-sky-50{--tw-bg-opacity:1;background-color:rgb(240 249 255 / var(--tw-bg-opacity, 1))}.bg-sky-600{--tw-bg-opacity:1;background-color:rgb(2 132 199 / var(--tw-bg-opacity, 1))}.bg-sky-900{--tw-bg-opacity:1;background-color:rgb(12 74 110 / var(--tw-bg-opacity, 1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240 / var(--tw-bg-opacity, 1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}.bg-stone-100{--tw-bg-opacity:1;background-color:rgb(245 245 244 / var(--tw-bg-opacity, 1))}.bg-stone-200{--tw-bg-opacity:1;background-color:rgb(231 229 228 / var(--tw-bg-opacity, 1))}.bg-stone-50{--tw-bg-opacity:1;background-color:rgb(250 250 249 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/10{background-color:rgb(255 255 255 / 0.1)}.bg-white\/20{background-color:rgb(255 255 255 / 0.2)}.bg-yellow-50{--tw-bg-opacity:1;background-color:rgb(254 252 232 / var(--tw-bg-opacity, 1))}.bg-rose-100{--tw-bg-opacity:1;background-color:rgb(255 228 230 / var(--tw-bg-opacity, 1))}.bg-sky-700{--tw-bg-opacity:1;background-color:rgb(3 105 161 / var(--tw-bg-opacity, 1))}.bg-amber-600{--tw-bg-opacity:1;background-color:rgb(217 119 6 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-violet-100{--tw-bg-opacity:1;background-color:rgb(237 233 254 / var(--tw-bg-opacity, 1))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-amber-400{--tw-gradient-from:#fbbf24 var(--tw-gradient-from-position);--tw-gradient-to:rgb(251 191 36 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-emerald-400{--tw-gradient-from:#34d399 var(--tw-gradient-from-position);--tw-gradient-to:rgb(52 211 153 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-sky-900{--tw-gradient-from:#0c4a6e var(--tw-gradient-from-position);--tw-gradient-to:rgb(12 74 110 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-amber-300{--tw-gradient-to:#fcd34d var(--tw-gradient-to-position)}.to-emerald-300{--tw-gradient-to:#6ee7b7 var(--tw-gradient-to-position)}.to-sky-700{--tw-gradient-to:#0369a1 var(--tw-gradient-to-position)}.p-0{padding:0px}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-1{padding:0.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.pb-1{padding-bottom:0.25rem}.pb-2{padding-bottom:0.5rem}.pt-2{padding-top:0.5rem}.pb-4{padding-bottom:1rem}.text-center{text-align:center}.align-top{vertical-align:top}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-0.025em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.text-amber-200{--tw-text-opacity:1;color:rgb(253 230 138 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9 / var(--tw-text-opacity, 1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14 / var(--tw-text-opacity, 1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15 / var(--tw-text-opacity, 1))}.text-emerald-200{--tw-text-opacity:1;color:rgb(167 243 208 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87 / var(--tw-text-opacity, 1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70 / var(--tw-text-opacity, 1))}.text-emerald-900{--tw-text-opacity:1;color:rgb(6 78 59 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-indigo-800{--tw-text-opacity:1;color:rgb(55 48 163 / var(--tw-text-opacity, 1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129 / var(--tw-text-opacity, 1))}.text-orange-700{--tw-text-opacity:1;color:rgb(194 65 12 / var(--tw-text-opacity, 1))}.text-purple-800{--tw-text-opacity:1;color:rgb(107 33 168 / var(--tw-text-opacity, 1))}.text-purple-900{--tw-text-opacity:1;color:rgb(88 28 135 / var(--tw-text-opacity, 1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57 / var(--tw-text-opacity, 1))}.text-rose-900{--tw-text-opacity:1;color:rgb(136 19 55 / var(--tw-text-opacity, 1))}.text-sky-100{--tw-text-opacity:1;color:rgb(224 242 254 / var(--tw-text-opacity, 1))}.text-sky-200{--tw-text-opacity:1;color:rgb(186 230 253 / var(--tw-text-opacity, 1))}.text-sky-300{--tw-text-opacity:1;color:rgb(125 211 252 / var(--tw-text-opacity, 1))}.text-sky-600{--tw-text-opacity:1;color:rgb(2 132 199 / var(--tw-text-opacity, 1))}.text-sky-700{--tw-text-opacity:1;color:rgb(3 105 161 / var(--tw-text-opacity, 1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133 / var(--tw-text-opacity, 1))}.text-sky-900{--tw-text-opacity:1;color:rgb(12 74 110 / var(--tw-text-opacity, 1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85 / var(--tw-text-opacity, 1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}.text-stone-200{--tw-text-opacity:1;color:rgb(231 229 228 / var(--tw-text-opacity, 1))}.text-stone-300{--tw-text-opacity:1;color:rgb(214 211 209 / var(--tw-text-opacity, 1))}.text-stone-400{--tw-text-opacity:1;color:rgb(168 162 158 / var(--tw-text-opacity, 1))}.text-stone-50{--tw-text-opacity:1;color:rgb(250 250 249 / var(--tw-text-opacity, 1))}.text-stone-500{--tw-text-opacity:1;color:rgb(120 113 108 / var(--tw-text-opacity, 1))}.text-stone-600{--tw-text-opacity:1;color:rgb(87 83 78 / var(--tw-text-opacity, 1))}.text-stone-700{--tw-text-opacity:1;color:rgb(68 64 60 / var(--tw-text-opacity, 1))}.text-stone-800{--tw-text-opacity:1;color:rgb(41 37 36 / var(--tw-text-opacity, 1))}.text-stone-900{--tw-text-opacity:1;color:rgb(28 25 23 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-yellow-700{--tw-text-opacity:1;color:rgb(161 98 7 / var(--tw-text-opacity, 1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.text-violet-800{--tw-text-opacity:1;color:rgb(91 33 182 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-80{opacity:0.8}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.duration-700{transition-duration:700ms}.hover\:border-stone-500:hover{--tw-border-opacity:1;border-color:rgb(120 113 108 / var(--tw-border-opacity, 1))}.hover\:bg-emerald-500:hover{--tw-bg-opacity:1;background-color:rgb(16 185 129 / var(--tw-bg-opacity, 1))}.hover\:bg-sky-200:hover{--tw-bg-opacity:1;background-color:rgb(186 230 253 / var(--tw-bg-opacity, 1))}.hover\:bg-sky-800:hover{--tw-bg-opacity:1;background-color:rgb(7 89 133 / var(--tw-bg-opacity, 1))}.hover\:bg-stone-200:hover{--tw-bg-opacity:1;background-color:rgb(231 229 228 / var(--tw-bg-opacity, 1))}.hover\:bg-stone-100:hover{--tw-bg-opacity:1;background-color:rgb(245 245 244 / var(--tw-bg-opacity, 1))}.hover\:bg-amber-500:hover{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.focus\:ring-sky-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(14 165 233 / var(--tw-ring-opacity, 1))}@media (min-width: 640px){.sm\:w-auto{width:auto}.sm\:flex-none{flex:none}.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-center{align-items:center}}@media (min-width: 768px){.md\:mb-0{margin-bottom:0px}.md\:mb-6{margin-bottom:1.5rem}.md\:mb-8{margin-bottom:2rem}.md\:mt-0{margin-top:0px}.md\:mt-2{margin-top:0.5rem}.md\:flex{display:flex}.md\:w-auto{width:auto}.md\:flex-none{flex:none}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}.md\:flex-wrap{flex-wrap:wrap}.md\:items-end{align-items:flex-end}.md\:items-center{align-items:center}.md\:gap-3{gap:0.75rem}.md\:gap-4{gap:1rem}.md\:gap-8{gap:2rem}.md\:gap-2{gap:0.5rem}.md\:p-4{padding:1rem}.md\:p-5{padding:1.25rem}.md\:p-6{padding:1.5rem}.md\:p-7{padding:1.75rem}.md\:py-2{padding-top:0.5rem;padding-bottom:0.5rem}.md\:py-8{padding-top:2rem;padding-bottom:2rem}.md\:text-2xl{font-size:1.5rem;line-height:2rem}.md\:text-3xl{font-size:1.875rem;line-height:2.25rem}.md\:text-base{font-size:1rem;line-height:1.5rem}.md\:text-lg{font-size:1.125rem;line-height:1.75rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}.md\:leading-loose{line-height:2}}@media (min-width: 1024px){.lg\:col-span-2{grid-column:span 2 / span 2}.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}}</style><style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}[type='text'],input:where(:not([type])),[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week'],[multiple],textarea,select{-webkit-appearance:none;appearance:none;background-color:#fff;border-color:#6b7280;border-width:1px;border-radius:0px;padding-top:0.5rem;padding-right:0.75rem;padding-bottom:0.5rem;padding-left:0.75rem;font-size:1rem;line-height:1.5rem;--tw-shadow:0 0 #0000;}[type='text']:focus, input:where(:not([type])):focus, [type='email']:focus, [type='url']:focus, [type='password']:focus, [type='number']:focus, [type='date']:focus, [type='datetime-local']:focus, [type='month']:focus, [type='search']:focus, [type='tel']:focus, [type='time']:focus, [type='week']:focus, [multiple]:focus, textarea:focus, select:focus{outline:2px solid transparent;outline-offset:2px;--tw-ring-inset:var(--tw-empty,/*!*/ /*!*/);--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:#2563eb;--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);border-color:#2563eb}input::placeholder,textarea::placeholder{color:#6b7280;opacity:1}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-date-and-time-value{min-height:1.5em;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit,::-webkit-datetime-edit-year-field,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute-field,::-webkit-datetime-edit-second-field,::-webkit-datetime-edit-millisecond-field,::-webkit-datetime-edit-meridiem-field{padding-top:0;padding-bottom:0}select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.5rem center;background-repeat:no-repeat;background-size:1.5em 1.5em;padding-right:2.5rem;print-color-adjust:exact}[multiple],[size]:where(select:not([size="1"])){background-image:initial;background-position:initial;background-repeat:unset;background-size:initial;padding-right:0.75rem;print-color-adjust:unset}[type='checkbox'],[type='radio']{-webkit-appearance:none;appearance:none;padding:0;print-color-adjust:exact;display:inline-block;vertical-align:middle;background-origin:border-box;-webkit-user-select:none;user-select:none;flex-shrink:0;height:1rem;width:1rem;color:#2563eb;background-color:#fff;border-color:#6b7280;border-width:1px;--tw-shadow:0 0 #0000}[type='checkbox']{border-radius:0px}[type='radio']{border-radius:100%}[type='checkbox']:focus,[type='radio']:focus{outline:2px solid transparent;outline-offset:2px;--tw-ring-inset:var(--tw-empty,/*!*/ /*!*/);--tw-ring-offset-width:2px;--tw-ring-offset-color:#fff;--tw-ring-color:#2563eb;--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}[type='checkbox']:checked,[type='radio']:checked{border-color:transparent;background-color:currentColor;background-size:100% 100%;background-position:center;background-repeat:no-repeat}[type='checkbox']:checked{background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");}@media (forced-colors: active) {[type='checkbox']:checked{-webkit-appearance:auto;appearance:auto}}[type='radio']:checked{background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");}@media (forced-colors: active) {[type='radio']:checked{-webkit-appearance:auto;appearance:auto}}[type='checkbox']:checked:hover,[type='checkbox']:checked:focus,[type='radio']:checked:hover,[type='radio']:checked:focus{border-color:transparent;background-color:currentColor}[type='checkbox']:indeterminate{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");border-color:transparent;background-color:currentColor;background-size:100% 100%;background-position:center;background-repeat:no-repeat;}@media (forced-colors: active) {[type='checkbox']:indeterminate{-webkit-appearance:auto;appearance:auto}}[type='checkbox']:indeterminate:hover,[type='checkbox']:indeterminate:focus{border-color:transparent;background-color:currentColor}[type='file']{background:unset;border-color:inherit;border-width:0;border-radius:0;padding:0;font-size:unset;line-height:inherit}[type='file']:focus{outline:1px solid ButtonText;outline:1px auto -webkit-focus-ring-color}.visible{visibility:visible}.absolute{position:absolute}.relative{position:relative}.top-0{top:0px}.mx-auto{margin-left:auto;margin-right:auto}.mb-0\.5{margin-bottom:0.125rem}.mb-1{margin-bottom:0.25rem}.mb-10{margin-bottom:2.5rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.ml-auto{margin-left:auto}.mr-1{margin-right:0.25rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-3{height:0.75rem}.h-7{height:1.75rem}.h-full{height:100%}.w-10{width:2.5rem}.w-7{width:1.75rem}.w-\[14\%\]{width:14%}.w-\[8\%\]{width:8%}.w-full{width:100%}.min-w-\[640px\]{min-width:640px}.max-w-6xl{max-width:72rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.flex-grow{flex-grow:1}.border-collapse{border-collapse:collapse}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.flex-nowrap{flex-wrap:nowrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-x-hidden{overflow-x:hidden}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-r-lg{border-top-right-radius:0.5rem;border-bottom-right-radius:0.5rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-r-2{border-right-width:2px}.border-t{border-top-width:1px}.border-\[\#2d6a9f\]{--tw-border-opacity:1;border-color:rgb(45 106 159 / var(--tw-border-opacity, 1))}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138 / var(--tw-border-opacity, 1))}.border-amber-400\/40{border-color:rgb(251 191 36 / 0.4)}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208 / var(--tw-border-opacity, 1))}.border-emerald-300{--tw-border-opacity:1;border-color:rgb(110 231 183 / var(--tw-border-opacity, 1))}.border-emerald-400\/40{border-color:rgb(52 211 153 / 0.4)}.border-indigo-200{--tw-border-opacity:1;border-color:rgb(199 210 254 / var(--tw-border-opacity, 1))}.border-purple-200{--tw-border-opacity:1;border-color:rgb(233 213 255 / var(--tw-border-opacity, 1))}.border-purple-300{--tw-border-opacity:1;border-color:rgb(216 180 254 / var(--tw-border-opacity, 1))}.border-rose-200{--tw-border-opacity:1;border-color:rgb(254 205 211 / var(--tw-border-opacity, 1))}.border-sky-200{--tw-border-opacity:1;border-color:rgb(186 230 253 / var(--tw-border-opacity, 1))}.border-sky-300{--tw-border-opacity:1;border-color:rgb(125 211 252 / var(--tw-border-opacity, 1))}.border-sky-400{--tw-border-opacity:1;border-color:rgb(56 189 248 / var(--tw-border-opacity, 1))}.border-sky-700{--tw-border-opacity:1;border-color:rgb(3 105 161 / var(--tw-border-opacity, 1))}.border-sky-800{--tw-border-opacity:1;border-color:rgb(7 89 133 / var(--tw-border-opacity, 1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240 / var(--tw-border-opacity, 1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225 / var(--tw-border-opacity, 1))}.border-stone-200{--tw-border-opacity:1;border-color:rgb(231 229 228 / var(--tw-border-opacity, 1))}.border-stone-300{--tw-border-opacity:1;border-color:rgb(214 211 209 / var(--tw-border-opacity, 1))}.border-transparent{border-color:transparent}.border-violet-200{--tw-border-opacity:1;border-color:rgb(221 214 254 / var(--tw-border-opacity, 1))}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-white\/50{border-color:rgb(255 255 255 / 0.5)}.border-white\/80{border-color:rgb(255 255 255 / 0.8)}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.bg-\[\#1a3a5c\]{--tw-bg-opacity:1;background-color:rgb(26 58 92 / var(--tw-bg-opacity, 1))}.bg-\[\#2d6a9f\]{--tw-bg-opacity:1;background-color:rgb(45 106 159 / var(--tw-bg-opacity, 1))}.bg-\[\#4a7fa5\]{--tw-bg-opacity:1;background-color:rgb(74 127 165 / var(--tw-bg-opacity, 1))}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199 / var(--tw-bg-opacity, 1))}.bg-amber-400\/30{background-color:rgb(251 191 36 / 0.3)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235 / var(--tw-bg-opacity, 1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229 / var(--tw-bg-opacity, 1))}.bg-emerald-400\/30{background-color:rgb(52 211 153 / 0.3)}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245 / var(--tw-bg-opacity, 1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255 / var(--tw-bg-opacity, 1))}.bg-orange-100{--tw-bg-opacity:1;background-color:rgb(255 237 213 / var(--tw-bg-opacity, 1))}.bg-pink-50{--tw-bg-opacity:1;background-color:rgb(253 242 248 / var(--tw-bg-opacity, 1))}.bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255 / var(--tw-bg-opacity, 1))}.bg-purple-50{--tw-bg-opacity:1;background-color:rgb(250 245 255 / var(--tw-bg-opacity, 1))}.bg-rose-100{--tw-bg-opacity:1;background-color:rgb(255 228 230 / var(--tw-bg-opacity, 1))}.bg-rose-50{--tw-bg-opacity:1;background-color:rgb(255 241 242 / var(--tw-bg-opacity, 1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254 / var(--tw-bg-opacity, 1))}.bg-sky-50{--tw-bg-opacity:1;background-color:rgb(240 249 255 / var(--tw-bg-opacity, 1))}.bg-sky-600{--tw-bg-opacity:1;background-color:rgb(2 132 199 / var(--tw-bg-opacity, 1))}.bg-sky-700{--tw-bg-opacity:1;background-color:rgb(3 105 161 / var(--tw-bg-opacity, 1))}.bg-sky-900{--tw-bg-opacity:1;background-color:rgb(12 74 110 / var(--tw-bg-opacity, 1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240 / var(--tw-bg-opacity, 1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}.bg-stone-100{--tw-bg-opacity:1;background-color:rgb(245 245 244 / var(--tw-bg-opacity, 1))}.bg-stone-200{--tw-bg-opacity:1;background-color:rgb(231 229 228 / var(--tw-bg-opacity, 1))}.bg-stone-50{--tw-bg-opacity:1;background-color:rgb(250 250 249 / var(--tw-bg-opacity, 1))}.bg-violet-100{--tw-bg-opacity:1;background-color:rgb(237 233 254 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/10{background-color:rgb(255 255 255 / 0.1)}.bg-white\/20{background-color:rgb(255 255 255 / 0.2)}.bg-yellow-50{--tw-bg-opacity:1;background-color:rgb(254 252 232 / var(--tw-bg-opacity, 1))}.bg-amber-600{--tw-bg-opacity:1;background-color:rgb(217 119 6 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-amber-400{--tw-gradient-from:#fbbf24 var(--tw-gradient-from-position);--tw-gradient-to:rgb(251 191 36 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-emerald-400{--tw-gradient-from:#34d399 var(--tw-gradient-from-position);--tw-gradient-to:rgb(52 211 153 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-sky-900{--tw-gradient-from:#0c4a6e var(--tw-gradient-from-position);--tw-gradient-to:rgb(12 74 110 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-amber-300{--tw-gradient-to:#fcd34d var(--tw-gradient-to-position)}.to-emerald-300{--tw-gradient-to:#6ee7b7 var(--tw-gradient-to-position)}.to-sky-700{--tw-gradient-to:#0369a1 var(--tw-gradient-to-position)}.p-0{padding:0px}.p-1{padding:0.25rem}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.pb-1{padding-bottom:0.25rem}.pb-2{padding-bottom:0.5rem}.pb-4{padding-bottom:1rem}.pt-2{padding-top:0.5rem}.text-center{text-align:center}.align-top{vertical-align:top}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-0.025em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.text-amber-200{--tw-text-opacity:1;color:rgb(253 230 138 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9 / var(--tw-text-opacity, 1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14 / var(--tw-text-opacity, 1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15 / var(--tw-text-opacity, 1))}.text-emerald-200{--tw-text-opacity:1;color:rgb(167 243 208 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87 / var(--tw-text-opacity, 1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70 / var(--tw-text-opacity, 1))}.text-emerald-900{--tw-text-opacity:1;color:rgb(6 78 59 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-indigo-800{--tw-text-opacity:1;color:rgb(55 48 163 / var(--tw-text-opacity, 1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129 / var(--tw-text-opacity, 1))}.text-orange-700{--tw-text-opacity:1;color:rgb(194 65 12 / var(--tw-text-opacity, 1))}.text-purple-800{--tw-text-opacity:1;color:rgb(107 33 168 / var(--tw-text-opacity, 1))}.text-purple-900{--tw-text-opacity:1;color:rgb(88 28 135 / var(--tw-text-opacity, 1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57 / var(--tw-text-opacity, 1))}.text-rose-900{--tw-text-opacity:1;color:rgb(136 19 55 / var(--tw-text-opacity, 1))}.text-sky-100{--tw-text-opacity:1;color:rgb(224 242 254 / var(--tw-text-opacity, 1))}.text-sky-200{--tw-text-opacity:1;color:rgb(186 230 253 / var(--tw-text-opacity, 1))}.text-sky-300{--tw-text-opacity:1;color:rgb(125 211 252 / var(--tw-text-opacity, 1))}.text-sky-600{--tw-text-opacity:1;color:rgb(2 132 199 / var(--tw-text-opacity, 1))}.text-sky-700{--tw-text-opacity:1;color:rgb(3 105 161 / var(--tw-text-opacity, 1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133 / var(--tw-text-opacity, 1))}.text-sky-900{--tw-text-opacity:1;color:rgb(12 74 110 / var(--tw-text-opacity, 1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85 / var(--tw-text-opacity, 1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}.text-stone-200{--tw-text-opacity:1;color:rgb(231 229 228 / var(--tw-text-opacity, 1))}.text-stone-300{--tw-text-opacity:1;color:rgb(214 211 209 / var(--tw-text-opacity, 1))}.text-stone-400{--tw-text-opacity:1;color:rgb(168 162 158 / var(--tw-text-opacity, 1))}.text-stone-50{--tw-text-opacity:1;color:rgb(250 250 249 / var(--tw-text-opacity, 1))}.text-stone-500{--tw-text-opacity:1;color:rgb(120 113 108 / var(--tw-text-opacity, 1))}.text-stone-600{--tw-text-opacity:1;color:rgb(87 83 78 / var(--tw-text-opacity, 1))}.text-stone-700{--tw-text-opacity:1;color:rgb(68 64 60 / var(--tw-text-opacity, 1))}.text-stone-800{--tw-text-opacity:1;color:rgb(41 37 36 / var(--tw-text-opacity, 1))}.text-stone-900{--tw-text-opacity:1;color:rgb(28 25 23 / var(--tw-text-opacity, 1))}.text-violet-800{--tw-text-opacity:1;color:rgb(91 33 182 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-yellow-700{--tw-text-opacity:1;color:rgb(161 98 7 / var(--tw-text-opacity, 1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-80{opacity:0.8}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.duration-700{transition-duration:700ms}.hover\:border-stone-500:hover{--tw-border-opacity:1;border-color:rgb(120 113 108 / var(--tw-border-opacity, 1))}.hover\:bg-emerald-500:hover{--tw-bg-opacity:1;background-color:rgb(16 185 129 / var(--tw-bg-opacity, 1))}.hover\:bg-sky-200:hover{--tw-bg-opacity:1;background-color:rgb(186 230 253 / var(--tw-bg-opacity, 1))}.hover\:bg-sky-800:hover{--tw-bg-opacity:1;background-color:rgb(7 89 133 / var(--tw-bg-opacity, 1))}.hover\:bg-stone-100:hover{--tw-bg-opacity:1;background-color:rgb(245 245 244 / var(--tw-bg-opacity, 1))}.hover\:bg-stone-200:hover{--tw-bg-opacity:1;background-color:rgb(231 229 228 / var(--tw-bg-opacity, 1))}.hover\:bg-amber-500:hover{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.focus\:ring-sky-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(14 165 233 / var(--tw-ring-opacity, 1))}@media (min-width: 640px){.sm\:w-auto{width:auto}.sm\:flex-none{flex:none}.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-center{align-items:center}}@media (min-width: 768px){.md\:mb-0{margin-bottom:0px}.md\:mb-6{margin-bottom:1.5rem}.md\:mb-8{margin-bottom:2rem}.md\:mt-0{margin-top:0px}.md\:mt-2{margin-top:0.5rem}.md\:flex{display:flex}.md\:w-auto{width:auto}.md\:flex-none{flex:none}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}.md\:flex-wrap{flex-wrap:wrap}.md\:items-end{align-items:flex-end}.md\:items-center{align-items:center}.md\:gap-2{gap:0.5rem}.md\:gap-3{gap:0.75rem}.md\:gap-4{gap:1rem}.md\:gap-8{gap:2rem}.md\:p-4{padding:1rem}.md\:p-5{padding:1.25rem}.md\:p-6{padding:1.5rem}.md\:p-7{padding:1.75rem}.md\:py-2{padding-top:0.5rem;padding-bottom:0.5rem}.md\:py-8{padding-top:2rem;padding-bottom:2rem}.md\:text-2xl{font-size:1.5rem;line-height:2rem}.md\:text-3xl{font-size:1.875rem;line-height:2.25rem}.md\:text-base{font-size:1rem;line-height:1.5rem}.md\:text-lg{font-size:1.125rem;line-height:1.75rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}.md\:leading-loose{line-height:2}}@media (min-width: 1024px){.lg\:col-span-2{grid-column:span 2 / span 2}.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}}</style></head>
+<body class="text-stone-800 antialiased overflow-x-hidden">
+
+    <div id="toast" class="" style="background-color: rgb(5, 150, 105); max-width: 90vw; font-size: 13px;">✅ Enlace copiado: https://jcrock84.github.io/planificaciones/planificacion-alvaro.html</div>
+
+    <!-- BARRA DE FORMATO (visible solo en modo edición) -->
+    <div id="format-toolbar" class="">
+        <span class="text-[10px] text-stone-400 font-semibold uppercase tracking-wide mr-1">Formato:</span>
+        <button class="fmt-btn" onclick="fmt('bold')" title="Negrita"><b>N</b></button>
+        <button class="fmt-btn" onclick="fmt('italic')" title="Cursiva"><i>K</i></button>
+        <button class="fmt-btn" onclick="fmt('underline')" title="Subrayado"><u>S</u></button>
+        <button class="fmt-btn" onclick="fmt('strikeThrough')" title="Tachado"><s>T</s></button>
+        <div class="fmt-sep"></div>
+        <select class="fmt-select" onchange="fmtSize(this.value)" title="Tamaño">
+            <option value="">Tamaño</option>
+            <option value="1">Muy pequeño</option>
+            <option value="2">Pequeño</option>
+            <option value="3">Normal</option>
+            <option value="4">Mediano</option>
+            <option value="5">Grande</option>
+            <option value="6">Muy grande</option>
+        </select>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="fmt('justifyLeft')" title="Izquierda">⬅</button>
+        <button class="fmt-btn" onclick="fmt('justifyCenter')" title="Centro">↔</button>
+        <button class="fmt-btn" onclick="fmt('justifyRight')" title="Derecha">➡</button>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="fmt('insertUnorderedList')" title="Lista">• Lista</button>
+        <div class="fmt-sep"></div>
+        <label class="flex items-center gap-1 text-[11px] text-stone-500 cursor-pointer" title="Color texto">
+            <span>🎨</span>
+            <input type="color" class="fmt-color" onchange="fmtColor(this.value)" value="#1e293b">
+        </label>
+        <label class="flex items-center gap-1 text-[11px] text-stone-500 cursor-pointer" title="Color fondo">
+            <span>🖌</span>
+            <input type="color" class="fmt-color" onchange="fmtBg(this.value)" value="#fef9c3">
+        </label>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="fmt('removeFormat')" title="Limpiar formato">✕ Limpiar</button>
+    </div>
+
+    <header id="main-header" class="text-stone-50 shadow-md transition-colors duration-300" style="background-color: rgb(162, 6, 14);">
+        <div class="max-w-6xl mx-auto px-4 py-6 md:flex justify-between items-center">
+            <div class="mb-4 md:mb-0 w-full md:w-auto">
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight md:leading-loose">
+                    Dashboard Estudio: <span id="student-name" class="text-sky-300 inline-block" contenteditable="false">Álvaro Ortega</span>
+                </h1>
+                <p class="text-sky-200 mt-1 text-sm md:text-base">Escala Básica Policía Nacional - Promoción 43 · Junio 2026</p>
+            </div>
+            
+            <div class="flex flex-col md:items-end gap-3 mt-2 md:mt-0">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <button id="btn-download" onclick="downloadHTML()" class="bg-sky-900 hover:bg-sky-800 text-white text-sm px-4 py-3 md:py-2 rounded-lg border border-sky-700 transition-colors flex items-center gap-2 font-medium w-full md:w-auto justify-center">
+                        <span>⬇️</span> Descargar HTML
+                    </button>
+                    <button id="btn-print" onclick="imprimirPlanificacion()" class="bg-sky-900 hover:bg-sky-800 text-white text-sm px-4 py-3 md:py-2 rounded-lg border border-sky-700 transition-colors flex items-center gap-2 font-medium w-full md:w-auto justify-center">
+                        <span>🖨️</span> Imprimir
+                    </button>
+                    <input type="color" id="header-color-picker" oninput="changeHeaderColor(event)" class="h-10 w-10 cursor-pointer rounded border border-sky-700 bg-sky-900 p-0 transition-colors hidden" value="#0c4a6e" title="Color del encabezado">
+                    <button id="btn-edit-mode" onclick="toggleEditMode()" class="bg-sky-900 hover:bg-sky-800 text-white text-sm px-4 py-3 md:py-2 rounded-lg border border-sky-700 transition-colors flex items-center gap-2 font-medium w-full md:w-auto justify-center"><span>✏️</span> Activar Edición</button>
+                    <button id="btn-save-link" onclick="copyCleanLink()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-4 py-3 md:py-2 rounded-lg shadow-md transition-colors font-bold flex items-center gap-2 w-full md:w-auto justify-center hidden">
+                        <span>🔗</span> Guardar y Copiar Enlace
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm w-full md:w-auto mt-2">
+                    <div class="bg-sky-900 px-3 py-2 rounded-lg border border-sky-700 flex-1 md:flex-none">
+                        <span class="block text-sky-300 text-[10px] uppercase tracking-wider mb-0.5">Método</span>
+                        <span class="font-semibold text-stone-200">MÉTODO NEXPOL</span>
+                    </div>
+                    <div class="bg-sky-900 px-3 py-2 rounded-lg border border-sky-700 flex-1 md:flex-none">
+                        <span class="block text-sky-300 text-[10px] uppercase tracking-wider mb-0.5">Estado Temario</span>
+                        <span id="student-status" class="font-semibold text-emerald-400 block w-full" contenteditable="false">2ª Vuelta — Consolidación y Simulacros</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="max-w-6xl mx-auto px-4 flex overflow-x-auto gap-1 border-t border-sky-800 pt-2 pb-1 hide-scrollbar">
+            <button class="nav-tab px-5 py-3 font-medium border-b-2 whitespace-nowrap transition-colors text-stone-300 border-transparent" data-target="metodologia">
+                🧠 Estrategia del Mes
+            </button>
+            <button class="nav-tab px-5 py-3 font-medium hover:text-white border-b-2 hover:border-stone-500 whitespace-nowrap transition-colors text-sky-300 border-sky-300 active" data-target="mensual">
+                📅 Planificador Semanal Junio
+            </button>
+            <button class="nav-tab px-5 py-3 font-medium hover:text-white border-b-2 hover:border-stone-500 whitespace-nowrap transition-colors text-stone-300 border-transparent" data-target="proyeccion">
+                🚀 Proyección Julio
+            </button>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 md:py-8 w-full overflow-x-hidden">
+
+        <!-- SECTION: Estrategia del Mes -->
+        <section id="metodologia" class="tab-content">
+            <div class="mb-6 md:mb-8">
+                <h2 class="text-xl md:text-2xl font-bold text-stone-900">Segunda Vuelta: Fase de Acumulación</h2>
+                <p id="edit-metodo-intro" class="text-sm md:text-base text-stone-600 mt-2 editable-global" contenteditable="false">Álvaro, con un 8 de media y 23 puntos en físicas estás en la zona de los que pueden ganar la plaza este año. Eso no es un halago -es una responsabilidad. Tienes un horario muy estructurado que ya demuestra que sabes lo que quieres, y un autodiagnóstico del temario que es oro puro: sabemos exactamente por dónde atacar.&nbsp;<div>El plan que tienes aquí respeta tu rutina de entrenos, tus horas de estudio y pone el foco en los temas que aún no dominas.&nbsp;</div><div><strong>Con este nivel y este plan, la plaza está al alcance. No la dejes escapar.</strong></div></p><div>El plan que tienes aquí respeta tu rutina de entrenos, tus horas de estudio y pone el foco en los temas que aún no dominas.&nbsp;</div><div><strong>Con este nivel y este plan, la plaza está al alcance. No la dejes escapar.</strong></div><p></p>
+            </div>
+
+            <!-- Objetivo mensual destacado -->
+            <div class="bg-sky-50 border border-sky-200 rounded-xl p-5 mb-6 flex gap-4 items-start">
+                <span class="text-3xl shrink-0">🎯</span>
+                <div>
+                    <h3 class="font-bold text-sky-900 text-base md:text-lg mb-1">Objetivo General de Junio</h3>
+                    <p id="edit-objetivo" class="text-sm text-sky-800 editable-global w-full" contenteditable="false">Con un 8 de media el objetivo no es solo mantener -es <strong>llegar al 8,5-9 en simulacros</strong> para tener colchón el día del examen oficial.&nbsp;<div>Los temas que solo has visto una vez (T28-T33, T35-T39) son tu mayor riesgo ahora mismo. Los que te defiendes hay que afianzarlos.&nbsp;</div><div>Y los que dominas, conservarlos con repasos cortos. Físicas: 23 puntos es excelente -entreno de mantenimiento sin descuidar.</div></p><div>Los temas que solo has visto una vez (T28-T33, T35-T39) son tu mayor riesgo ahora mismo. Los que te defiendes hay que afianzarlos.&nbsp;</div><div>Y los que dominas, conservarlos con repasos cortos. Físicas: 23 puntos es excelente -entreno de mantenimiento sin descuidar.</div><p></p>
+                </div>
+            </div>
+
+            <!-- PANEL DATOS ALUMNA -->
+            <div id="stats-panel" class="bg-gradient-to-br from-sky-900 to-sky-700 rounded-2xl p-5 md:p-7 mb-6 shadow-lg text-white" style="background: linear-gradient(135deg, rgb(162, 6, 14) 0%, rgb(187, 31, 39) 100%);">
+                <div class="flex flex-col md:flex-row md:items-center gap-2 mb-5">
+                    <span class="text-2xl">📊</span>
+                    <h3 class="font-bold text-lg md:text-xl text-white">Tu Estado Actual — Junio 2026</h3>
+                    <span class="ml-auto text-xs bg-sky-600 border border-sky-400 px-3 py-1 rounded-full font-semibold text-sky-100 shrink-0">📈 Nivel alto · A por la plaza este año</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                    <!-- Teoría -->
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/20">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sky-200 text-xs font-semibold uppercase tracking-wider">📚 Teoría (simulacro)</span>
+                            <span class="text-xs bg-amber-400/30 text-amber-200 border border-amber-400/40 px-2 py-0.5 rounded-full font-bold">Objetivo: +7</span>
+                        </div>
+                        <div class="flex items-end gap-2 mb-3">
+                            <span id="stat-teoria-actual" class="text-4xl font-black text-white">8,0</span>
+                            <span class="text-sky-200 text-sm mb-1">/ 10</span>
+                            <span class="ml-auto text-2xl font-black text-amber-300">8,5</span>
+                        </div>
+                        <!-- Barra progreso teoría -->
+                        <div class="w-full bg-white/20 rounded-full h-3 relative overflow-hidden">
+                            <div class="h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 transition-all duration-700" style="width: 80%"></div>
+                            <div class="absolute top-0 h-3 border-r-2 border-white/80" style="left: 85%" title="Objetivo 7"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-sky-300 mt-1">
+                            <span>Actual: 8,0</span>
+                            <span>🎯 Meta: 8,5-9</span>
+                        </div>
+                        <p id="edit-stat-teoria" class="text-xs text-sky-200 mt-3 editable-global w-full" contenteditable="false">Nivel muy alto. El objetivo ahora es <strong class="text-white">subir el techo</strong> trabajando los temas poco vistos (T28-T39) y consolidar los que te defiendes. Un 8,5-9 en simulacros te da el colchón para el examen oficial.</p>
+                    </div>
+
+                    <!-- Físicas -->
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/20">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sky-200 text-xs font-semibold uppercase tracking-wider">🏃 Físicas (puntos)</span>
+                            <span class="text-xs bg-emerald-400/30 text-emerald-200 border border-emerald-400/40 px-2 py-0.5 rounded-full font-bold">Objetivo: mantener ✅</span>
+                        </div>
+                        <div class="flex items-end gap-2 mb-3">
+                            <span id="stat-fisicas-actual" class="text-4xl font-black text-white">23</span>
+                            <span class="text-sky-200 text-sm mb-1">pts</span>
+                            <span class="ml-auto text-2xl font-black text-emerald-300">20-22</span>
+                        </div>
+                        <!-- Barra progreso físicas (max referencia ~30) -->
+                        <div class="w-full bg-white/20 rounded-full h-3 relative overflow-hidden">
+                            <div class="h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-300 transition-all duration-700" style="width: 77%"></div>
+                            <div class="absolute top-0 h-3 border-r-2 border-white/80" style="left: 67%" title="Objetivo 20 pts"></div>
+                            <div class="absolute top-0 h-3 border-r-2 border-white/50" style="left: 73%" title="Objetivo 22 pts"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-sky-300 mt-1">
+                            <span>Actual: 23 pts</span>
+                            <span>🎯 Meta: 20-22 pts</span>
+                        </div>
+                        <p id="edit-stat-fisicas" class="text-xs text-sky-200 mt-3 editable-global w-full" contenteditable="false">¡Físicas en zona de plaza! Con 23 puntos estás muy bien posicionado. <strong class="text-white">Mantén el nivel</strong> con tus entrenos de L-X-V más el trote del domingo. No arriesgues lesión — el trabajo ya está hecho.</p>
+                    </div>
+                </div>
+
+                <!-- Mensaje motivacional -->
+                <div class="bg-white/10 border border-white/20 rounded-xl p-4 flex gap-3 items-start">
+                    <span class="text-2xl shrink-0">⭐</span>
+                    <div>
+                        <p id="edit-motivacion" class="text-sm text-white font-medium editable-global w-full leading-relaxed" contenteditable="false">Álvaro, el nivel que tienes no es casualidad — es trabajo acumulado. Un 8 de media y 23 puntos físicos te ponen entre los candidatos serios a la plaza este año. Pero eso también significa que el margen de error se reduce: los temas que solo has visto una vez hay que trabajarlos ya, y los que te defiendes hay que convertirlos en dominados. Tu horario es sólido y lo conoces bien. Respétalo, sigue el plan y cuando llegues al examen oficial, que no quede ningún tema sin haber pasado por él al menos dos veces. <strong>Este puede ser tu año. Ve a por ello.</strong> 💪</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-10">
+                <!-- Curva del olvido más pequeña -->
+                <div class="lg:col-span-2 bg-white p-4 md:p-5 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                        <h3 class="font-bold text-base">Simulador Curva del Olvido</h3>
+                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                            <button id="btn-simulate-none" class="flex-1 sm:flex-none text-xs px-3 py-1.5 rounded bg-stone-100 border border-stone-300 hover:bg-stone-200">Sin Repaso</button>
+                            <button id="btn-simulate-all" class="flex-1 sm:flex-none text-xs px-3 py-1.5 rounded bg-sky-100 text-sky-800 border border-sky-300 hover:bg-sky-200 font-bold">Aplicar Método</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="forgettingChart" width="0" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;"></canvas>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-base mb-3 border-b pb-2">Patrón de Repasos</h3>
+                        <ul class="space-y-3 text-xs md:text-sm">
+                            <li class="flex items-start gap-3">
+                                <span class="bg-stone-200 font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs">D0</span>
+                                <span id="edit-patron-0" class="editable-global block w-full" contenteditable="false"><strong>Clase Academia:</strong> Asiste, anota dudas y repasa al llegar a casa.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="bg-sky-100 text-sky-700 font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs">1d</span>
+                                <span id="edit-patron-1" class="editable-global block w-full" contenteditable="false"><strong>Repaso 24h:</strong> Lectura activa de esquemas + Test 50 preguntas del bloque.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="bg-amber-100 text-amber-700 font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs">7d</span>
+                                <span id="edit-patron-2" class="editable-global block w-full" contenteditable="false"><strong>Repaso 7d:</strong> Repaso rápido (15-20 min) + análisis de errores del test.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="bg-emerald-100 text-emerald-700 font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs">30x</span>
+                                <span id="edit-patron-3" class="editable-global block w-full" contenteditable="false"><strong>Simulacros 30x30:</strong> Test de 100 con análisis profundo. Desde el día 15 en plataforma.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-sm">
+                        <h3 class="font-bold text-amber-900 text-base mb-2 flex items-center gap-2"><span>⚖️</span> Alta Rentabilidad</h3>
+                        <p id="edit-foco-renta" class="text-xs text-amber-800 editable-global w-full" contenteditable="false">El bloque Jurídico (T1-T26) sigue siendo tu mayor palanca. Aunque el foco esté en otros bloques, repasa Jurídicas cada semana. Son los temas con más peso en el examen.</p>
+                    </div>
+
+                    <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl shadow-sm">
+                        <h3 class="font-bold text-rose-900 text-base mb-2 flex items-center gap-2"><span>💡</span> Herramienta Extra</h3>
+                        <p id="edit-herramienta" class="text-xs text-rose-800 editable-global w-full" contenteditable="false">Usa <strong>NotebookLM de Google</strong> para generar podcasts de los temas que necesites reforzar y flashcards de repaso. Tu academia puede ayudarte a configurarlo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="text-xl md:text-2xl font-bold text-stone-900 mb-4 md:mb-6">Tu Horario Base Semanal (Junio)</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 w-full">
+                <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-stone-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b pb-2">Lunes</h4>
+                    <div id="edit-rutina-l1" class="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-2 rounded text-xs text-center font-medium flex-grow flex items-center justify-center flex-col editable-global w-full" contenteditable="false">
+                        <span>📚 Estudio: Repaso rápido temas de la semana</span>
+                    </div>
+                    <div id="edit-rutina-l2" class="bg-stone-100 text-stone-700 border border-stone-300 px-2 py-2 rounded text-xs text-center font-medium mt-auto editable-global w-full" contenteditable="false">🧠 16:30 — Psicotécnicos (DH)</div>
+                </div>
+                
+                <div class="bg-sky-50 p-3 md:p-4 rounded-lg shadow-sm border border-sky-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b border-sky-200 pb-2 text-sky-900">Martes</h4>
+                    <div id="edit-rutina-m1" class="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-2 rounded text-xs text-center font-medium editable-global w-full" contenteditable="false">📚 Día completo de estudio — sin entreno · Máximo rendimiento teórico</div>
+                    <div id="edit-rutina-m2" class="bg-sky-100 text-sky-800 border border-sky-200 px-2 py-2 rounded text-xs text-center font-medium mt-auto editable-global w-full" contenteditable="false">🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso test</div>
+                </div>
+                
+                <div class="bg-sky-50 p-3 md:p-4 rounded-lg shadow-sm border border-sky-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b border-sky-200 pb-2 text-sky-900">Miércoles</h4>
+                    <div id="edit-rutina-x1" class="bg-sky-100 text-sky-800 border border-sky-200 px-2 py-2 rounded text-xs text-center font-medium editable-global w-full" contenteditable="false">🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso test</div>
+                    <div id="edit-rutina-x2" class="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-2 rounded text-xs text-center font-medium mt-auto editable-global w-full" contenteditable="false">🏃 09:00-12:00 — Entreno · 13:00-15:00 Repaso test semana anterior</div>
+                </div>
+                
+                <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-stone-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b pb-2">Jueves</h4>
+                    <div id="edit-rutina-j1" class="bg-sky-100 text-sky-800 border border-sky-200 px-2 py-2 rounded text-xs text-center font-medium editable-global w-full" contenteditable="false">🏫 16:00-21:00 — Clase Repaso (DH)</div>
+                    <div id="edit-rutina-j2" class="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-2 rounded text-xs text-center font-medium mt-auto editable-global w-full" contenteditable="false">🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso · 🏫 16:00-21:00 Clase DH</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 w-full">
+                <div class="bg-purple-50 p-3 md:p-4 rounded-lg shadow-sm border border-purple-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b border-purple-200 pb-2 text-purple-900">Viernes</h4>
+                    <div id="edit-rutina-v1" class="bg-purple-100 text-purple-800 border border-purple-300 px-2 py-3 rounded text-xs text-center font-medium h-full flex flex-col justify-center gap-1 editable-global w-full" contenteditable="false">
+                        <span>🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso</span>
+                        <span class="font-normal opacity-80 text-[10px]">17:00-21:00 Estudio temas flojos</span>
+                    </div>
+                </div>
+                <div class="bg-emerald-50 p-3 md:p-4 rounded-lg shadow-sm border border-emerald-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b border-emerald-200 pb-2 text-emerald-700">Sábado</h4>
+                    <div id="edit-rutina-s1" class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-3 rounded text-xs text-center font-medium h-full flex flex-col justify-center gap-1 editable-global w-full" contenteditable="false">
+                        <span>🖥️ Clase Online Academia</span>
+                        <span class="font-normal opacity-80 text-[10px]">10:00-14:00 · No te la saltes</span>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-3 md:p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-center border-b border-slate-200 pb-2 text-slate-700">Domingo</h4>
+                    <div id="edit-rutina-d1" class="bg-slate-200 text-slate-800 border border-slate-300 px-2 py-3 rounded text-xs text-center font-medium h-full flex flex-col justify-center gap-1 editable-global w-full" contenteditable="false">
+                        <span>🏃 Trote + lastre en barra</span>
+                        <span class="font-normal opacity-80 text-[10px]">Off total de estudio — el cerebro también descansa</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Planificación Semanal Junio -->
+        <section id="mensual" class="tab-content active">
+            <div class="mb-4 md:mb-6 md:flex justify-between items-end gap-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-stone-900">Planificador Semanal Junio</h2>
+                    <p class="text-sm md:text-base text-stone-600 mt-1 md:mt-2">Planificación adaptada a tu rutina. L-X-V: entreno 9-12, repaso test 13-15, estudio 17-21. Martes: día completo de estudio. Sábado: clase online + tarde trabajo (libre a partir de la semana 2). Domingo: trote + off estudio.</p>
+                </div>
+            </div>
+
+            <div class="flex flex-nowrap overflow-x-auto md:flex-wrap gap-2 mb-4 md:mb-6 pb-2" id="week-selectors"><button class="week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0 ">Semana 1 (1-7 Jun)</button><button class="week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0 ">Semana 2 (8-14 Jun)</button><button class="week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0 ">Semana 3 (15-21 Jun)</button><button class="week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0 ">Semana 4 (22-28 Jun)</button><button class="week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0 active bg-sky-700 text-white border-sky-700">Semana 5 (29 Jun - 5 Jul)</button></div>
+
+            <div id="weekly-content" class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 md:p-6 relative w-full overflow-hidden">
+                
+                
+                <div class="flex flex-col mb-4 border-b border-stone-200 pb-4 w-full">
+                    <div class="w-full">
+                        <h3 id="week-title-text" class="text-lg md:text-xl font-bold text-stone-800 mb-2 inline-block p-1 w-full ">Semana 5 (29 Jun - 5 Jul)</h3>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 w-full mt-1">
+                        <span class="text-sky-700 font-medium text-xs md:text-sm shrink-0">🎯 Foco Semanal:</span>
+                        <span id="focus-text" class="editable-title text-sky-700 font-medium text-xs md:text-sm w-full p-1 ">Repaso T43-44-45 · Repaso T29-30-31-32 · Inicio bloque Informática</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col w-full">
+                    
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ">Lunes 29 Jun</h4>
+                        <div class="flex w-full md:w-auto"><div class="flex flex-wrap gap-1 mt-2 md:mt-0"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-stone-100 text-stone-700 border border-stone-300 shrink-0">Psicotécnicos</span><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-purple-100 text-purple-800 border border-purple-200 shrink-0">Repaso</span></div></div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 "><b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 -errores semana anterior.<br><b>17:00-19:00:</b> Repaso rápido T43-44-45 (<i>te defiendes -a dominar</i>). + T 8 Organigrama entero.&nbsp;</div>
+                </div>
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ">Martes 1 Jul</h4>
+                        <div class="flex w-full md:w-auto"><div class="flex flex-wrap gap-1 mt-2 md:mt-0"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-purple-100 text-purple-800 border border-purple-200 shrink-0">Estudio</span><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-rose-100 text-rose-800 border border-rose-200 shrink-0">Test</span></div></div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 "><b>M/T:</b> Estudio T 20-38-39-40-41 (<i>temas próxima semana; T40-41 repaso rápido</i>).<br><b>Test:</b> Simulacro 30x30 y análisis. ¡Toca cerrar el mes fuerte! A ver esa nota.</div>
+                </div>
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ">Miércoles 2 Jul</h4>
+                        <div class="flex w-full md:w-auto"><div class="flex flex-wrap gap-1 mt-2 md:mt-0"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-sky-100 text-sky-800 border border-sky-200 shrink-0">Academia</span><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-purple-100 text-purple-800 border border-purple-200 shrink-0">Estudio</span></div></div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 "><b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 — T 28-33 errores.<br><span style="--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder;">Tarde : </span><span style="--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;">Estudio temas 22-23-24-25.&nbsp;</span></div>
+                </div>
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ">Jueves 3 Jul</h4>
+                        <div class="flex w-full md:w-auto"><div class="flex flex-wrap gap-1 mt-2 md:mt-0"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-sky-100 text-sky-800 border border-sky-200 shrink-0">Academia</span><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-purple-100 text-purple-800 border border-purple-200 shrink-0">Repaso</span></div></div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 "><b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00. Comienza nuevo bloque de 30x30, otros 5 test. Vamos sumando. Ya deberías tener tu cuaderno de 30x30 con errores etc.<br><b>16:00-21:00 (DH):</b> Clase Repaso T 43-44-45. Después: test de bloque T43-T45.</div>
+                </div>
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ">Viernes 4 Jul</h4>
+                        <div class="flex w-full md:w-auto"><div class="flex flex-wrap gap-1 mt-2 md:mt-0"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-rose-100 text-rose-800 border border-rose-200 shrink-0">Test 30x30</span><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-violet-100 text-violet-800 border border-violet-200 shrink-0">Retroalimentación</span></div></div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 "><b>M/T:</b>&nbsp;Test de bloques y simulacros 30x30. Analiza cada error con papel y boli: dónde fallaste y por qué.<div><b>Estudio: </b>Temas semana que viene 9-13-14-15.</div></div>
+                </div>
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ">Fin de semana 5 Jul</h4>
+                        <div class="flex w-full md:w-auto"><div class="flex flex-wrap gap-1 mt-2 md:mt-0"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-sky-100 text-sky-800 border border-sky-200 shrink-0">Academia Online</span><span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-rose-100 text-rose-800 border border-rose-200 shrink-0">Test 100</span></div></div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 "><b>Sábado (ONLINE 10:00-14:00):</b> Clase Repaso T 29-30-31-32.<br><b>Tarde libre:</b> Simulacro 30x30 + repaso T4-T6 y T10-11-12.<br><b>Domingo:</b>&nbsp; Trote . Descanso estudio. Cierre del mes -has trabajado duro.&nbsp;<div>Antes de este fin de semana debemos hablar para enfocar Julio y ver como te ha ido este mes.</div></div>
+                </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Proyección Julio -->
+        <section id="proyeccion" class="tab-content">
+            <div class="w-full">
+                <h2 class="text-xl md:text-2xl font-bold text-stone-900 mb-2 text-center">Proyección — Julio 2026</h2>
+                <p class="text-center text-stone-500 text-sm mb-6">Lo que viene después de junio. Prepárate.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-5 text-center flex flex-col items-center">
+                        <div class="text-3xl mb-2">⚡</div>
+                        <h3 id="edit-julio-t0" class="text-base font-bold text-stone-800 mb-2 editable-global w-full" contenteditable="false">Fase de Intensificación Final</h3>
+                        <p id="edit-julio-d0" class="text-xs text-stone-600 editable-global w-full" contenteditable="false">Julio sube el ritmo. Repasos por bloques más exigentes, simulacros semanales completos y consolidación de Informática y Sociales. El objetivo es llegar a agosto por encima del 7 en teoría y rozando los 20 puntos en físicas.</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl shadow-sm flex gap-3 items-start">
+                            <span class="text-xl shrink-0">🎯</span>
+                            <div>
+                                <h4 id="edit-julio-t1" class="font-bold text-indigo-900 text-sm mb-1 editable-global w-full" contenteditable="false">Simulacros Semanales 30x30</h4>
+                                <p id="edit-julio-d1" class="text-xs text-indigo-800 editable-global w-full" contenteditable="false">Un simulacro de 100 preguntas por semana con análisis exhaustivo de errores. Cronómetro, control de blancos y seguimiento de nota acumulada.</p>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl shadow-sm flex gap-3 items-start">
+                            <span class="text-xl shrink-0">🏋️</span>
+                            <div>
+                                <h4 id="edit-julio-t2" class="font-bold text-emerald-900 text-sm mb-1 editable-global w-full" contenteditable="false">Repaso Completo T1-T45</h4>
+                                <p id="edit-julio-d2" class="text-xs text-emerald-800 editable-global w-full" contenteditable="false">Segunda pasada de todo el temario. Foco especial en los bloques con mayor tasa de error en junio: Informática, Extranjería y Ciencias Sociales.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CALENDARIO JULIO -->
+                <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden mb-3">
+                    <div class="bg-[#1a3a5c] text-white text-center py-3 px-4">
+                        <h3 class="font-bold text-base md:text-lg tracking-wide">ACADEMIA ÁNGELES CUSTODIOS · Promo 43 · JULIO 2026</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[640px] text-xs border-collapse">
+                            <thead>
+                                <tr>
+                                    <th class="bg-[#2d6a9f] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[14%]">LUNES</th>
+                                    <th class="bg-[#2d6a9f] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[14%]">MARTES</th>
+                                    <th class="bg-[#2d6a9f] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[14%]">MIÉRCOLES</th>
+                                    <th class="bg-[#2d6a9f] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[14%]">JUEVES</th>
+                                    <th class="bg-[#2d6a9f] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[14%]">VIERNES</th>
+                                    <th class="bg-[#2d6a9f] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[14%]">SÁBADO</th>
+                                    <th class="bg-[#4a7fa5] text-white py-2 px-2 text-center font-bold border border-[#2d6a9f] w-[8%]">DOM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Semana 1: 6-12 Jul -->
+                                <tr class="border-b border-stone-200">
+                                    <td class="align-top p-2 border border-stone-200 bg-pink-50">
+                                        <div class="font-bold text-stone-500 mb-1">6</div>
+                                        <div class="font-bold text-stone-700 text-[10px] mb-0.5">PSICOTÉCNICOS</div>
+                                        <div class="text-stone-600 text-[10px]">16:30 h. - 19:30 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Sevilla</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">7</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">8</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO BLOQUE INFORMÁTICA</div>
+                                        <div class="text-stone-500 text-[10px]">TEMAS 20-38-39-40-41</div>
+                                        <div class="text-stone-600 text-[10px]">09:00 h. - 14:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Sevilla</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">9</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO BLOQUE INFORMÁTICA</div>
+                                        <div class="text-stone-500 text-[10px]">TEMAS 20-38-39-40-41</div>
+                                        <div class="text-stone-600 text-[10px]">16:00 h. - 21:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Dos Hermanas</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">10</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-orange-100">
+                                        <div class="font-bold text-stone-500 mb-1">11</div>
+                                        <div class="font-bold text-orange-700 text-[10px] mb-0.5">SUPUESTOS PRÁCTICOS PENAL Y EXTRANJERÍA</div>
+                                        <div class="text-stone-600 text-[10px]">10:00 h. - 14:00 h.</div>
+                                        <div class="text-sky-600 font-bold text-[10px]">ONLINE PARA TODOS</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-stone-50"><div class="font-bold text-stone-400 mb-1">12</div></td>
+                                </tr>
+                                <!-- Semana 2: 13-19 Jul -->
+                                <tr class="border-b border-stone-200">
+                                    <td class="align-top p-2 border border-stone-200 bg-pink-50">
+                                        <div class="font-bold text-stone-500 mb-1">13</div>
+                                        <div class="font-bold text-stone-700 text-[10px] mb-0.5">PSICOTÉCNICOS</div>
+                                        <div class="text-stone-600 text-[10px]">16:30 h. - 19:30 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Dos Hermanas</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">14</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">15</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO T-9-13-14-15-43</div>
+                                        <div class="text-stone-600 text-[10px]">09:00 h. - 14:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Sevilla</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">16</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO T-9-13-14-15-43</div>
+                                        <div class="text-stone-600 text-[10px]">16:00 h. - 21:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Dos Hermanas</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">17</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">18</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO T-9-13-14-15-43</div>
+                                        <div class="text-stone-600 text-[10px]">10:00 h. - 14:00 h.</div>
+                                        <div class="text-sky-600 font-bold text-[10px]">ONLINE</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-stone-50"><div class="font-bold text-stone-400 mb-1">19</div></td>
+                                </tr>
+                                <!-- Semana 3: 20-26 Jul -->
+                                <tr class="border-b border-stone-200">
+                                    <td class="align-top p-2 border border-stone-200 bg-pink-50">
+                                        <div class="font-bold text-stone-500 mb-1">20</div>
+                                        <div class="font-bold text-stone-700 text-[10px] mb-0.5">PSICOTÉCNICOS</div>
+                                        <div class="text-stone-600 text-[10px]">16:30 h. - 19:30 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Sevilla</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">21</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">22</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO T 22-23-24-25-26</div>
+                                        <div class="text-stone-600 text-[10px]">09:00 h. - 14:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Sevilla</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">23</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO T 22-23-24-25-26</div>
+                                        <div class="text-stone-600 text-[10px]">16:00 h. - 21:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Dos Hermanas</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">24</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">25</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO T 22-23-24-25-26</div>
+                                        <div class="text-stone-600 text-[10px]">10:00 h. - 14:00 h.</div>
+                                        <div class="text-sky-600 font-bold text-[10px]">ONLINE</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-stone-50"><div class="font-bold text-stone-400 mb-1">26</div></td>
+                                </tr>
+                                <!-- Semana 4: 27-31 Jul -->
+                                <tr>
+                                    <td class="align-top p-2 border border-stone-200 bg-pink-50">
+                                        <div class="font-bold text-stone-500 mb-1">27</div>
+                                        <div class="font-bold text-stone-700 text-[10px] mb-0.5">PSICOTÉCNICOS</div>
+                                        <div class="text-stone-600 text-[10px]">16:30 h. - 19:30 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Dos Hermanas</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">28</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">29</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO BLOQUE DE SOCIALES</div>
+                                        <div class="text-stone-600 text-[10px]">09:00 h. - 14:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Sevilla</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">30</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO BLOQUE DE SOCIALES</div>
+                                        <div class="text-stone-600 text-[10px]">16:00 h. - 21:00 h.</div>
+                                        <div class="text-stone-500 text-[10px]">(Presencial)</div>
+                                        <div class="text-green-600 font-semibold text-[10px]">Dos Hermanas</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200"><div class="font-bold text-stone-400 mb-1">31</div></td>
+                                    <td class="align-top p-2 border border-stone-200 bg-yellow-50">
+                                        <div class="font-bold text-stone-500 mb-1">1 Ago</div>
+                                        <div class="font-bold text-yellow-700 text-[10px] mb-0.5">REPASO BLOQUE DE SOCIALES</div>
+                                        <div class="text-stone-600 text-[10px]">10:00 h. - 14:00 h.</div>
+                                        <div class="text-sky-600 font-bold text-[10px]">ONLINE</div>
+                                    </td>
+                                    <td class="align-top p-2 border border-stone-200 bg-stone-50"><div class="font-bold text-stone-400 mb-1">2</div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Aviso cambios -->
+                <div class="flex items-center gap-2 text-xs text-stone-500 bg-stone-100 border border-stone-200 rounded-lg px-4 py-2 mb-8">
+                    <span class="text-base">⚠️</span>
+                    <span>Este calendario es orientativo y puede sufrir cambios por parte de la academia. Confirma siempre con secretaría o tus canales oficiales de comunicación.</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let appData = {"nombre":"Álvaro Ortega","estado":"2ª Vuelta — Consolidación y Simulacros","headerColor":"#a2060e","customTexts":{"edit-metodo-intro":"Álvaro, con un 8 de media y 23 puntos en físicas estás en la zona de los que pueden ganar la plaza este año. Eso no es un halago -es una responsabilidad. Tienes un horario muy estructurado que ya demuestra que sabes lo que quieres, y un autodiagnóstico del temario que es oro puro: sabemos exactamente por dónde atacar.&nbsp;<div>El plan que tienes aquí respeta tu rutina de entrenos, tus horas de estudio y pone el foco en los temas que aún no dominas.&nbsp;</div><div><strong>Con este nivel y este plan, la plaza está al alcance. No la dejes escapar.</strong></div>","edit-objetivo":"Con un 8 de media el objetivo no es solo mantener -es <strong>llegar al 8,5-9 en simulacros</strong> para tener colchón el día del examen oficial.&nbsp;<div>Los temas que solo has visto una vez (T28-T33, T35-T39) son tu mayor riesgo ahora mismo. Los que te defiendes hay que afianzarlos.&nbsp;</div><div>Y los que dominas, conservarlos con repasos cortos. Físicas: 23 puntos es excelente -entreno de mantenimiento sin descuidar.</div>","edit-stat-teoria":"Nivel muy alto. El objetivo ahora es <strong class=\"text-white\">subir el techo</strong> trabajando los temas poco vistos (T28-T39) y consolidar los que te defiendes. Un 8,5-9 en simulacros te da el colchón para el examen oficial.","edit-stat-fisicas":"¡Físicas en zona de plaza! Con 23 puntos estás muy bien posicionado. <strong class=\"text-white\">Mantén el nivel</strong> con tus entrenos de L-X-V más el trote del domingo. No arriesgues lesión — el trabajo ya está hecho.","edit-motivacion":"Álvaro, el nivel que tienes no es casualidad — es trabajo acumulado. Un 8 de media y 23 puntos físicos te ponen entre los candidatos serios a la plaza este año. Pero eso también significa que el margen de error se reduce: los temas que solo has visto una vez hay que trabajarlos ya, y los que te defiendes hay que convertirlos en dominados. Tu horario es sólido y lo conoces bien. Respétalo, sigue el plan y cuando llegues al examen oficial, que no quede ningún tema sin haber pasado por él al menos dos veces. <strong>Este puede ser tu año. Ve a por ello.</strong> 💪","edit-patron-0":"<strong>Clase Academia:</strong> Asiste, anota dudas y repasa al llegar a casa.","edit-patron-1":"<strong>Repaso 24h:</strong> Lectura activa de esquemas + Test 50 preguntas del bloque.","edit-patron-2":"<strong>Repaso 7d:</strong> Repaso rápido (15-20 min) + análisis de errores del test.","edit-patron-3":"<strong>Simulacros 30x30:</strong> Test de 100 con análisis profundo. Desde el día 15 en plataforma.","edit-foco-renta":"El bloque Jurídico (T1-T26) sigue siendo tu mayor palanca. Aunque el foco esté en otros bloques, repasa Jurídicas cada semana. Son los temas con más peso en el examen.","edit-herramienta":"Usa <strong>NotebookLM de Google</strong> para generar podcasts de los temas que necesites reforzar y flashcards de repaso. Tu academia puede ayudarte a configurarlo.","edit-rutina-l1":"\n                        <span>📚 Estudio: Repaso rápido temas de la semana</span>\n                    ","edit-rutina-l2":"🧠 16:30 — Psicotécnicos (DH)","edit-rutina-m1":"📚 Día completo de estudio — sin entreno · Máximo rendimiento teórico","edit-rutina-m2":"🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso test","edit-rutina-x1":"🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso test","edit-rutina-x2":"🏃 09:00-12:00 — Entreno · 13:00-15:00 Repaso test semana anterior","edit-rutina-j1":"🏫 16:00-21:00 — Clase Repaso (DH)","edit-rutina-j2":"🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso · 🏫 16:00-21:00 Clase DH","edit-rutina-v1":"\n                        <span>🏃 09:00-12:00 Entreno · 📚 13:00-15:00 Repaso</span>\n                        <span class=\"font-normal opacity-80 text-[10px]\">17:00-21:00 Estudio temas flojos</span>\n                    ","edit-rutina-s1":"\n                        <span>🖥️ Clase Online Academia</span>\n                        <span class=\"font-normal opacity-80 text-[10px]\">10:00-14:00 · No te la saltes</span>\n                    ","edit-rutina-d1":"\n                        <span>🏃 Trote + lastre en barra</span>\n                        <span class=\"font-normal opacity-80 text-[10px]\">Off total de estudio — el cerebro también descansa</span>\n                    ","edit-julio-t0":"Fase de Intensificación Final","edit-julio-d0":"Julio sube el ritmo. Repasos por bloques más exigentes, simulacros semanales completos y consolidación de Informática y Sociales. El objetivo es llegar a agosto por encima del 7 en teoría y rozando los 20 puntos en físicas.","edit-julio-t1":"Simulacros Semanales 30x30","edit-julio-d1":"Un simulacro de 100 preguntas por semana con análisis exhaustivo de errores. Cronómetro, control de blancos y seguimiento de nota acumulada.","edit-julio-t2":"Repaso Completo T1-T45","edit-julio-d2":"Segunda pasada de todo el temario. Foco especial en los bloques con mayor tasa de error en junio: Informática, Extranjería y Ciencias Sociales."},"plan":[{"id":"w1","label":"Semana 1 (1-7 Jun)","focus":"Simulacro 28 global · Repaso T7-8 · Extranjería T4-10-11-12","days":[{"day":"Lunes 2 Jun","tags":["Psicotécnicos","Simulacro"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 — revisa el simulacro 28 anterior.<br><b>Tarde</b><b>:</b> Preparación simulacro global + repaso rápido T 7-8."},{"day":"Martes 3 Jun","tags":["Simulacro","Descanso"],"text":"<b>Día completo de estudio (sin entreno):</b><br>🕘 09:00-13:00: Estudio T4-5-6 (te defiendes — conviértelos en dominados).<br>🕐 13:00-15:00: Descanso.<br>🕔 15:00-21:00: Estudio T10-11-12 (solo visto 1 vez — prioridad alta)."},{"day":"Miércoles 4 Jun","tags":["Academia","Repaso 24h"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 — errores T10-12.<br><b>16:00-21:00 (DH):</b> Clase Repaso T7-8. Los dominas — busca los detalles trampa."},{"day":"Jueves 5 Jun","tags":["Academia","Repaso 24h"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 — detalles T7-8.<br><b>16:00-21:00 (DH):</b> Clase Repaso T7-8 (2º turno). Después: apunta todo lo nuevo que hayas aprendido aunque \"domines\" el tema."},{"day":"Viernes 6 Jun","tags":["Estudio Libre","Jurídicas"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00.<br><b>17:00-21:00:</b> Estudio T20-T21 (te defiendes — sube nivel). T20 y T21 tienen mucho peso en examen."},{"day":"Fin de semana 7 Jun","tags":["Test 100","Repaso"],"text":"<b>Sábado (ONLINE 10:00-14:00):</b> Clase online academia.<div><b>Tarde:</b> Trabajo (hasta semana 2 libre).<br><b>Domingo:</b>&nbsp;Trote + lastre en barra. Descanso total de estudio.</div>"}]},{"id":"w2","label":"Semana 2 (8-14 Jun)","focus":"Repaso T1-2-3-5-6-21 · Preparación T13-14-15-16-20","days":[{"day":"Lunes 8 Jun","tags":["Psicotécnicos","Estudio"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 - errores y repetir test.<br><b>17:00-19:00:</b> Repaso rápido T 1-2-3 (<i>los dominas — 20 min cada uno, solo repasar no estudiar)</i>. +T22-25"},{"day":"Martes 9 Jun","tags":["Estudio","Test"],"text":"<b>Día completo de estudio (sin entreno):</b><br>🕘 09:00-13:00: Estudio T 4-5-6 (te defiendes - conviértelos en dominados). +T23-24<br>🕐 13:00-15:00: Descanso.<br>🕔 15:00-21:00: Estudio T 10-11-12 (<i>solo visto 1 vez y poco repaso — prioridad alta</i>)."},{"day":"Miércoles 10 Jun","tags":["Academia","Repaso 24h"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 - T 23 al 27 errores.<br><b>Estudio: </b>Estudio temas 16-17-21."},{"day":"Jueves 11 Jun","tags":["Academia","Estudio"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00. En breve comienza curso 30x30, ves acabando de repetir test, simulacros, oficiales, etc.<br><b>16:00-21:00 (DH):</b> Clase Repaso T 1-2-3-5-6.<br><b>Después:</b> Apunta detalles nuevos del tema -aunque lo domines siempre hay algo que se escapa."},{"day":"Viernes 12 Jun","tags":["Estudio Libre"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00. Enviame nuevas notas si repites test de 100. Para ver como evoluciona la media.<br><b>17:00-21:00:</b> Estudio T 27-28-29-30 (<i>prioridad máxima esta semana</i>)."},{"day":"Fin de semana 13-14 Jun","tags":["Academia Online","Test 100"],"text":"<b>Sábado (ONLINE 10:00-14:00):</b> Clase Repaso T21. Repasa bien este tema que son muchas leyes, durante el fin de semana. Si te parece poco disfruta del finde.<div><b>Tarde:</b> ¡Tarde libre!&nbsp;<br><b>Domingo:</b>&nbsp;Trote . Descanso estudio.</div>"}]},{"id":"w3","label":"Semana 3 (15-21 Jun)","focus":"Repaso T16-17-18-19-20 · Repaso T13-14-15 · Preparación T27-28","days":[{"day":"Lunes 15 Jun","tags":["Psicotécnicos","Repaso"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 - errores.<b> Comienza el 30x30</b>. Hoy puedes empezar a meter el primero. Cada uno de estos test lo deberás analizar como si hicieses tu la retroalimentación entera. Ves pasandome notas.<br><b>17:00-19:00:</b> Repaso rápido T 16-17-18-19 (<i>los dominas -30 min por tema, preguntas trampa</i>). Supuestos penal. +T20"},{"day":"Martes 16 Jun","tags":["Estudio","Test"],"text":"<b>Día completo de estudio:</b><br>🕘 09:00-13:00: Estudio T 31-32-33 <i>(solo vistos una vez</i>). Temas que no controlas tanto, aunque tienen menos prioridad, tu nivel te permite echarle más tiempo para que se conviertan en pregutnas acertadas seguras. Eso sí, sin perder de vista la base. JURÍDICAS.<br>🕐 13:00-15:00: Descanso.<br>🕔 15:00-19:00: Simulacro 30x30 completo + análisis exhaustivo.<br>🕗 19:00-21:00: Repaso errores del simulacro. Repaso rápido tema 7."},{"day":"Miércoles 17 Jun","tags":["Academia","Repaso 24h"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 — errores T31-33. Repaso rápido tema 8 (<i>no el organigrama</i>)<br><div><span style=\"--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder;\">Tarde: </span><span style=\"--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\">Estudio temas 34-35-36-37.</span></div>"},{"day":"Jueves 18 Jun","tags":["Academia","Repaso"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00. Revisión errores 30x30. Haz un examen oficial antiguo y pasame nota.<br><b>16:00-21:00 (DH):</b> Clase Repaso T 16-T 20. Después: anota los detalles nuevos aunque ya domines el bloque. Consolida antes de que se olvide."},{"day":"Viernes 19 Jun","tags":["Estudio Libre"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00.&nbsp;&nbsp;<span style=\"background-color: rgb(238, 248, 255);\">Simulacro 30x30 completo + análisis exhaustivo.</span><br><b>17:00-21:00:</b> Estudio T20-T21. Haz tarjetas en Notebook o test específicos de estos dos temas."},{"day":"Fin de semana 20-21 Jun","tags":["Academia Online","Test 30x30"],"text":"<b>Sábado (ONLINE 10:00-14:00):</b> Clase Repaso T 13-14-15.&nbsp;<div><b>Tarde libre:</b> Simulacro 30x30 + análisis.<br><b>Domingo:</b> 🏃 Trote. Descanso estudio.</div>"}]},{"id":"w4","label":"Semana 4 (22-28 Jun)","focus":"Repaso T27-28 · Clase Actualizaciones · Preparación T43-44-45","days":[{"day":"Lunes 22 Jun","tags":["Psicotécnicos","Test"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 -<i>revisa el simulacro 26-27-28 anterior, anota errores por bloques.</i><br><b>17:00-21:00:</b> Estudio temas 40-41-42 + repaso rápido T 7-8 (<i>los dominas, solo refrescar)</i>."},{"day":"Martes 23 Jun","tags":["Estudio"],"text":"<b>M/T:</b> Estudio T 43-44-45 (<i>temas de la semana siguiente)</i>. Repaso rápido T 5-6.<br>Busca en tus apuntes detalles poco habituales de estos temas — ese detalle extra puede sumar el día del examen."},{"day":"Miércoles 24 Jun","tags":["Academia","Actualizaciones"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b>&nbsp;Simulacro 30x30 completo + análisis exhaustivo.<br><div><span style=\"--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder;\">Tarde : </span><span style=\"--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\">Repaso rápido temas 1-2-3. Test bloque extranjería y revisar repasos.</span></div>"},{"day":"Jueves 25 Jun","tags":["Academia","Repaso"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b>&nbsp;13:00-15:00 — T 34-39 errores.&nbsp;<br><b>16:00-21:00 (DH):</b> Clase Repaso T27-28&nbsp; Después: test de bloque T22-T28 -mide cuánto has consolidado. Analiza errores y anótalos en tu cuaderno de fallos."},{"day":"Viernes 26 Jun","tags":["Test","Retroalimentación"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00.&nbsp;&nbsp;<span style=\"background-color: rgb(233, 246, 255);\">&nbsp;Simulacro 30x30 + análisis o descanso activo.</span><br><b>17:00-21:00:</b> Repaso T40-41 (te defiendes — conviértelo en dominado) + T42 (lo dominas, solo refrescar)."},{"day":"Fin de semana 27-28 Jun","tags":["Academia Online","Playa 🏖️"],"text":"<b>Sábado (ONLINE 10:00-14:00):</b> Clase Actualizaciones. Imprescindible.<br><b>Tarde libre.&nbsp;</b><b>Domingo:</b> 🏃 Trote + lastre. 🏖️ Llevas un mes brutal. DESCONECTA. El lunes volvemos."}]},{"id":"w5","label":"Semana 5 (29 Jun - 5 Jul)","focus":"Repaso T43-44-45 · Repaso T29-30-31-32 · Inicio bloque Informática","days":[{"day":"Lunes 29 Jun","tags":["Psicotécnicos","Repaso"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 -errores semana anterior.<br><b>17:00-19:00:</b> Repaso rápido T43-44-45 (<i>te defiendes -a dominar</i>). + T 8 Organigrama entero.&nbsp;"},{"day":"Martes 1 Jul","tags":["Estudio","Test"],"text":"<b>M/T:</b> Estudio T 20-38-39-40-41 (<i>temas próxima semana; T40-41 repaso rápido</i>).<br><b>Test:</b> Simulacro 30x30 y análisis. ¡Toca cerrar el mes fuerte! A ver esa nota."},{"day":"Miércoles 2 Jul","tags":["Academia","Estudio"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00 — T 28-33 errores.<br><span style=\"--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder;\">Tarde : </span><span style=\"--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\">Estudio temas 22-23-24-25.&nbsp;</span>"},{"day":"Jueves 3 Jul","tags":["Academia","Repaso"],"text":"<b>Entreno:</b> 09:00-12:00.<br><b>Repaso test:</b> 13:00-15:00. Comienza nuevo bloque de 30x30, otros 5 test. Vamos sumando. Ya deberías tener tu cuaderno de 30x30 con errores etc.<br><b>16:00-21:00 (DH):</b> Clase Repaso T 43-44-45. Después: test de bloque T43-T45."},{"day":"Viernes 4 Jul","tags":["Test 30x30","Retroalimentación"],"text":"<b>M/T:</b>&nbsp;Test de bloques y simulacros 30x30. Analiza cada error con papel y boli: dónde fallaste y por qué.<div><b>Estudio: </b>Temas semana que viene 9-13-14-15.</div>"},{"day":"Fin de semana 5 Jul","tags":["Academia Online","Test 100"],"text":"<b>Sábado (ONLINE 10:00-14:00):</b> Clase Repaso T 29-30-31-32.<br><b>Tarde libre:</b> Simulacro 30x30 + repaso T4-T6 y T10-11-12.<br><b>Domingo:</b>&nbsp; Trote . Descanso estudio. Cierre del mes -has trabajado duro.&nbsp;<div>Antes de este fin de semana debemos hablar para enfocar Julio y ver como te ha ido este mes.</div>"}]}]};
+        let isEditMode = false;
+        let activeWeekIndex = 0;
+        let forgettingChartInstance = null;
+
+        function toggleEditMode() {
+            if (isEditMode) {
+                saveGlobalsToMemory();
+                saveActiveWeekToMemory();
+                appData.nombre = document.getElementById('student-name').innerText;
+                appData.estado = document.getElementById('student-status').innerText;
+                
+                isEditMode = false;
+                document.getElementById('format-toolbar').classList.remove('visible');
+
+                // Auto-guardar en localStorage al salir del modo edición
+                saveGlobalsToMemory();
+                saveToLocalStorage();
+
+                const btnEdit = document.getElementById('btn-edit-mode');
+                btnEdit.innerHTML = '<span>✏️</span> Activar Edición';
+                btnEdit.classList.replace('bg-amber-600', 'bg-sky-900');
+                btnEdit.classList.replace('hover:bg-amber-500', 'hover:bg-sky-800');
+                document.getElementById('btn-save-link').classList.add('hidden');
+                document.getElementById('header-color-picker').classList.add('hidden');
+                
+                document.getElementById('student-name').contentEditable = false;
+                document.getElementById('student-status').contentEditable = false;
+                document.getElementById('student-name').classList.remove('editable-active');
+                document.getElementById('student-status').classList.remove('editable-active');
+                
+                const globals = document.querySelectorAll('.editable-global');
+                globals.forEach(el => {
+                    el.contentEditable = false;
+                    el.classList.remove('editable-active', 'editable-active-block');
+                });
+                
+                initDynamicPlan(false);
+            } else {
+                isEditMode = true;
+                
+                const btnEdit = document.getElementById('btn-edit-mode');
+                btnEdit.innerHTML = '<span>👁️</span> Desactivar Edición';
+                btnEdit.classList.replace('bg-sky-900', 'bg-amber-600');
+                btnEdit.classList.replace('hover:bg-sky-800', 'hover:bg-amber-500');
+                document.getElementById('btn-save-link').classList.remove('hidden');
+                document.getElementById('header-color-picker').classList.remove('hidden');
+                
+                document.getElementById('student-name').contentEditable = true;
+                document.getElementById('student-status').contentEditable = true;
+                document.getElementById('student-name').classList.add('editable-active');
+                document.getElementById('student-status').classList.add('editable-active');
+                
+                const globals = document.querySelectorAll('.editable-global');
+                globals.forEach(el => {
+                    el.contentEditable = true;
+                    el.classList.add('editable-active');
+                    if(el.tagName === 'P') el.classList.add('editable-active-block');
+                });
+                
+                initDynamicPlan(false);
+            }
+        }
+
+        function saveGlobalsToMemory() {
+            const globals = document.querySelectorAll('.editable-global');
+            globals.forEach(el => {
+                appData.customTexts[el.id] = el.innerHTML;
+            });
+        }
+
+        function saveActiveWeekToMemory() {
+            if (!isEditMode) return;
+            
+            const focusEl = document.getElementById('focus-text');
+            if (focusEl) appData.plan[activeWeekIndex].focus = focusEl.innerText;
+            
+            const weekTitleEl = document.getElementById('week-title-text');
+            if (weekTitleEl) appData.plan[activeWeekIndex].label = weekTitleEl.innerText;
+
+            const dayCards = document.querySelectorAll('.day-card');
+            dayCards.forEach((card, idx) => {
+                const titleEl = card.querySelector('.editable-day-title');
+                if (titleEl) appData.plan[activeWeekIndex].days[idx].day = titleEl.innerText;
+                
+                const textEl = card.querySelector('.editable-text');
+                if (textEl) appData.plan[activeWeekIndex].days[idx].text = textEl.innerHTML;
+                
+                const tagsInput = card.querySelector('.editable-tags-input');
+                if (tagsInput) {
+                    const tagsRaw = tagsInput.value.split(',').map(t => t.trim()).filter(t => t !== "");
+                    appData.plan[activeWeekIndex].days[idx].tags = tagsRaw;
+                }
+            });
+        }
+
+        function changeHeaderColor(event) {
+            const color = event.target.value;
+            document.getElementById('main-header').style.backgroundColor = color;
+            appData.headerColor = color;
+
+            // Sincronizar panel de datos con el mismo color (gradiente oscuro→menos oscuro)
+            const panel = document.getElementById('stats-panel');
+            if (panel) {
+                panel.style.background = `linear-gradient(135deg, ${color} 0%, ${lightenColor(color, 25)} 100%)`;
+            }
+        }
+
+        // Aclara un color hex en N unidades (0-255)
+        function lightenColor(hex, amount) {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const r = Math.min(255, (num >> 16) + amount);
+            const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+            const b = Math.min(255, (num & 0xff) + amount);
+            return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+
+        function imprimirPlanificacion() {
+            try {
+                if (window.self !== window.top) {
+                    showToast("⚠️ La vista previa bloquea la impresión. Descarga el archivo o ábrelo localmente.", true);
+                }
+                setTimeout(() => window.print(), 300);
+            } catch (e) {
+                showToast("⚠️ Función bloqueada. Descarga el archivo para imprimir.", true);
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('nexpol_plan_alvaro_junio', JSON.stringify(appData));
+            } catch(e) {
+                console.error("Error guardando en localStorage:", e);
+            }
+        }
+
+        async function copyCleanLink() {
+            // Guardar estado actual antes de copiar
+            if (isEditMode) {
+                saveGlobalsToMemory();
+                saveActiveWeekToMemory();
+                appData.nombre = document.getElementById('student-name').innerText;
+                appData.estado = document.getElementById('student-status').innerText;
+                appData.headerColor = document.getElementById('header-color-picker').value;
+                toggleEditMode();
+            }
+            saveToLocalStorage();
+
+            // Copiar URL limpia sin ?data=
+            const cleanUrl = window.location.href.split('?')[0];
+            try {
+                await navigator.clipboard.writeText(cleanUrl);
+                showToast("✅ Enlace copiado: " + cleanUrl);
+            } catch(err) {
+                showToast("⚠️ No se pudo copiar. Copia la URL de la barra del navegador.", true);
+            }
+        }
+
+        async function generateShareLink() {
+            // Mantenemos por compatibilidad — redirige a copyCleanLink
+            copyCleanLink();
+        }
+
+        function showToast(message, isWarning = false) {
+            const toast = document.getElementById("toast");
+            toast.innerHTML = message;
+            toast.style.backgroundColor = isWarning ? "#d97706" : "#059669";
+            toast.style.maxWidth = "90vw";
+            toast.style.fontSize = "13px";
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, isWarning ? 5000 : 6000);
+        }
+
+        function initNavigation() {
+            const navTabs = document.querySelectorAll('.nav-tab');
+            const sections = document.querySelectorAll('.tab-content');
+
+            navTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    navTabs.forEach(t => {
+                        t.classList.remove('text-sky-300', 'border-sky-300', 'active');
+                        t.classList.add('text-stone-300', 'border-transparent');
+                    });
+                    
+                    tab.classList.remove('text-stone-300', 'border-transparent');
+                    tab.classList.add('text-sky-300', 'border-sky-300', 'active');
+
+                    const targetId = tab.getAttribute('data-target');
+                    sections.forEach(sec => {
+                        sec.classList.remove('active');
+                        if (sec.id === targetId) {
+                            sec.classList.add('active');
+                            if(targetId === 'metodologia' && forgettingChartInstance) {
+                                setTimeout(() => forgettingChartInstance.resize(), 50);
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        function initDynamicPlan(resetActiveIndex = false) {
+            if (resetActiveIndex) activeWeekIndex = 0;
+            
+            const selectorContainer = document.getElementById('week-selectors');
+            selectorContainer.innerHTML = '';
+            
+            appData.plan.forEach((week, index) => {
+                const btn = document.createElement('button');
+                btn.className = `week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0 ${index === activeWeekIndex ? 'active bg-sky-700 text-white border-sky-700' : ''}`;
+                btn.textContent = week.label;
+                btn.onclick = () => {
+                    if (isEditMode) {
+                        saveActiveWeekToMemory();
+                        saveToLocalStorage();
+                    }
+
+                    document.querySelectorAll('.week-btn').forEach(b => b.className = 'week-btn px-4 py-2 text-sm font-medium rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-100 transition-colors shrink-0');
+                    btn.className = 'week-btn active px-4 py-2 text-sm font-medium rounded-lg border border-sky-700 bg-sky-700 text-white transition-colors shrink-0';
+                    
+                    activeWeekIndex = index;
+                    renderWeekContent(activeWeekIndex);
+                };
+                selectorContainer.appendChild(btn);
+            });
+
+            renderWeekContent(activeWeekIndex);
+        }
+
+        function renderWeekContent(weekIndex) {
+            const weekData = appData.plan[weekIndex];
+            const container = document.getElementById('weekly-content');
+            
+            const titleClass = isEditMode ? 'editable-active' : '';
+            const textClass = isEditMode ? 'editable-active editable-active-block' : '';
+            const contentAttr = isEditMode ? 'contenteditable="true"' : '';
+
+            const getTagHTML = (tags) => tags.map(tag => {
+                const tLower = tag.toLowerCase();
+                if(tLower.includes("academia")) return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-sky-100 text-sky-800 border border-sky-200 shrink-0">${tag}</span>`;
+                if(tLower.includes("jurídica") || tLower.includes("juridica") || tLower.includes("plus")) return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-amber-100 text-amber-800 border border-amber-200 shrink-0">${tag}</span>`;
+                if(tLower.includes("descanso") || tLower.includes("playa")) return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">${tag}</span>`;
+                if(tLower.includes("simulacro") || tLower.includes("30x30") || tLower.includes("test")) return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-rose-100 text-rose-800 border border-rose-200 shrink-0">${tag}</span>`;
+                if(tLower.includes("online") || tLower.includes("retro")) return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-violet-100 text-violet-800 border border-violet-200 shrink-0">${tag}</span>`;
+                if(tLower.includes("psico")) return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-stone-100 text-stone-700 border border-stone-300 shrink-0">${tag}</span>`;
+                return `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide bg-purple-100 text-purple-800 border border-purple-200 shrink-0">${tag}</span>`;
+            }).join('');
+
+            const daysHTML = weekData.days.map((d, dIdx) => {
+                const tagsArea = isEditMode 
+                    ? `<input type="text" class="text-xs p-2 border border-sky-300 bg-sky-50 rounded w-full editable-tags-input focus:outline-none focus:ring-2 focus:ring-sky-500" value="${d.tags.join(', ')}" placeholder="Etiquetas (separadas por coma)">`
+                    : `<div class="flex flex-wrap gap-1 mt-2 md:mt-0">${getTagHTML(d.tags)}</div>`;
+
+                return `
+                <div class="day-card p-3 md:p-4 bg-stone-50 rounded-r-lg mb-3 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 mb-2 w-full">
+                        <h4 class="font-bold text-stone-800 editable-day-title p-1 w-full md:w-auto ${titleClass}" ${contentAttr}>${d.day}</h4>
+                        <div class="flex w-full md:w-auto">${tagsArea}</div>
+                    </div>
+                    <div class="editable-text text-xs md:text-sm text-stone-600 p-1 mt-1 md:mt-0 ${textClass}" ${contentAttr}>${d.text}</div>
+                </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                ${isEditMode ? '<div class="bg-blue-50 text-blue-800 text-xs p-3 rounded mb-4 border border-blue-200">ℹ️ Toca cualquier texto para modificarlo. Etiquetas por comas.</div>' : ''}
+                
+                <div class="flex flex-col mb-4 border-b border-stone-200 pb-4 w-full">
+                    <div class="w-full">
+                        <h3 id="week-title-text" class="text-lg md:text-xl font-bold text-stone-800 mb-2 inline-block p-1 w-full ${titleClass}" ${contentAttr}>${weekData.label}</h3>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 w-full mt-1">
+                        <span class="text-sky-700 font-medium text-xs md:text-sm shrink-0">🎯 Foco Semanal:</span>
+                        <span id="focus-text" class="editable-title text-sky-700 font-medium text-xs md:text-sm w-full p-1 ${titleClass}" ${contentAttr}>${weekData.focus}</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col w-full">
+                    ${daysHTML}
+                </div>
+            `;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('forgettingChart');
+            if(!ctx) return;
+
+            const days = Array.from({length: 31}, (_, i) => i);
+            const dataNone = days.map(t => Math.max(15, 100 * Math.exp(-t/4)));
+            const dataReviewed = days.map(t => {
+                if (t === 0) return 100;
+                if (t > 0 && t <= 1) return 100 * Math.exp(-t/4);
+                if (t === 1) return 100;
+                if (t > 1 && t <= 7) return 100 * Math.exp(-(t-1)/9);
+                if (t === 7) return 100;
+                if (t > 7 && t <= 30) return 100 * Math.exp(-(t-7)/25);
+                if (t === 30) return 100;
+                return null;
+            });
+
+            forgettingChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'Curva Natural (Sin Repaso)',
+                            data: dataNone,
+                            borderColor: '#a8a29e',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Método Activo (Repasos 1d, 7d, 30d)',
+                            data: dataReviewed,
+                            borderColor: '#0284c7',
+                            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#0284c7',
+                            pointRadius: (ctx) => {
+                                const idx = ctx.dataIndex;
+                                return (idx === 0 || idx === 1 || idx === 7 || idx === 30) ? 5 : 0;
+                            },
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'ui-sans-serif, system-ui' } } },
+                        tooltip: {
+                            backgroundColor: 'rgba(12, 74, 110, 0.9)',
+                            titleFont: { family: 'ui-sans-serif, system-ui' },
+                            bodyFont: { family: 'ui-sans-serif, system-ui' },
+                            callbacks: {
+                                title: (context) => `Día ${context[0].label}`,
+                                label: (context) => `${context.dataset.label}: ${Math.round(context.parsed.y)}% Retención`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0, max: 105,
+                            title: { display: true, text: '% Memoria Retenida' },
+                            grid: { color: '#f5f5f4' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Días Transcurridos' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('btn-simulate-none').addEventListener('click', () => {
+                forgettingChartInstance.data.datasets[1].hidden = true;
+                forgettingChartInstance.update();
+            });
+            document.getElementById('btn-simulate-all').addEventListener('click', () => {
+                forgettingChartInstance.data.datasets[1].hidden = false;
+                forgettingChartInstance.update();
+            });
+        }
+
+
+
+        function downloadHTML() {
+            if (isEditMode) {
+                saveGlobalsToMemory();
+                saveActiveWeekToMemory();
+                appData.nombre = document.getElementById('student-name').innerText;
+                appData.estado = document.getElementById('student-status').innerText;
+                appData.headerColor = document.getElementById('header-color-picker').value;
+            } else {
+                saveGlobalsToMemory();
+            }
+            saveToLocalStorage();
+
+            var html = document.documentElement.outerHTML;
+            var marker = 'let appData = ';
+            var markerEnd = '        let isEditMode';
+            var start = html.indexOf(marker);
+            var end = html.indexOf(markerEnd);
+            if (start !== -1 && end !== -1) {
+                html = html.substring(0, start) + marker + JSON.stringify(appData) + ';\n' + html.substring(end);
+            }
+
+            var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            var nombre = appData.nombre.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s+/g, '');
+            a.download = 'planificacion-' + nombre + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('\u2b07\ufe0f HTML descargado. S\u00fabelo a GitHub para actualizar el enlace del alumno.');
+        }
+
+        // --- FORMATO DE TEXTO ---
+        function fmt(command) {
+            document.execCommand(command, false, null);
+        }
+        function fmtSize(size) {
+            if (size) document.execCommand('fontSize', false, size);
+        }
+        function fmtColor(color) {
+            document.execCommand('foreColor', false, color);
+        }
+        function fmtBg(color) {
+            document.execCommand('hiliteColor', false, color);
+        }
+
+        // Mostrar/ocultar toolbar según foco en elemento editable
+        document.addEventListener('selectionchange', () => {
+            if (!isEditMode) return;
+            const sel = window.getSelection();
+            if (sel && sel.toString().length > 0) {
+                document.getElementById('format-toolbar').classList.add('visible');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const toolbar = document.getElementById('format-toolbar');
+            if (!isEditMode) return;
+            if (!toolbar.contains(e.target)) {
+                const sel = window.getSelection();
+                if (!sel || sel.toString().length === 0) {
+                    toolbar.classList.remove('visible');
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
+
+            if (encodedData) {
+                try {
+                    let decompressed = null;
+                    if (typeof LZString !== 'undefined') {
+                        decompressed = LZString.decompressFromEncodedURIComponent(encodedData);
+                    }
+                    if (!decompressed) {
+                        decompressed = decodeURIComponent(escape(atob(encodedData)));
+                    }
+
+                    const parsedData = JSON.parse(decompressed);
+                    if (parsedData.nombre && parsedData.plan) {
+                        appData = parsedData;
+                    }
+                } catch (e) {
+                    console.error("No se pudo cargar la configuración de la URL.", e);
+                }
+            } else {
+                const localData = localStorage.getItem('nexpol_plan_alvaro_junio');
+                if (localData) {
+                    try {
+                        const parsedData = JSON.parse(localData);
+                        if (parsedData.nombre && parsedData.plan) {
+                            appData = parsedData;
+                        }
+                    } catch (e) {
+                        console.error("Error al leer el guardado local.", e);
+                    }
+                }
+            }
+
+            if (!appData.customTexts) appData.customTexts = {};
+
+            document.getElementById('student-name').innerText = appData.nombre;
+            document.getElementById('student-status').innerText = appData.estado;
+
+            for (const [id, text] of Object.entries(appData.customTexts)) {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = text;
+            }
+
+            if (appData.headerColor) {
+                document.getElementById('main-header').style.backgroundColor = appData.headerColor;
+                document.getElementById('header-color-picker').value = appData.headerColor;
+                // Aplicar también al panel de datos
+                const panel = document.getElementById('stats-panel');
+                if (panel) {
+                    panel.style.background = `linear-gradient(135deg, ${appData.headerColor} 0%, ${lightenColor(appData.headerColor, 25)} 100%)`;
+                }
+            }
+
+            initNavigation();
+            initDynamicPlan(true);
+            initChart();
+        });
+    </script>
+
+
+</body></html>
